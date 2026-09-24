@@ -1,22 +1,33 @@
 package ar.edu.unlp.rescuesync.controllers;
 
 import ar.edu.unlp.rescuesync.entity.Emergencia;
-import ar.edu.unlp.rescuesync.service.RescueSyncService;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import ar.edu.unlp.rescuesync.service.EmergenciaService;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/emergencias")
-public class EmergenciaController{
+public class EmergenciaController {
 
-    private RescueSyncService service;
+    private final EmergenciaService emergenciaService;
 
-    public EmergenciaController(RescueSyncService service){
-        this.service=service;
+    public EmergenciaController(EmergenciaService emergenciaService) {
+        this.emergenciaService = emergenciaService;
     }
 
-    public Emergencia cargar(@RequestBody Emergencia emergencia){
-        return service.cargarEmergencia(emergencia);
+    @PostMapping
+    public Emergencia registrar(@RequestBody Emergencia emergencia) {
+        return emergenciaService.registrarEmergencia(emergencia);
+    }
+
+    @GetMapping
+    public List<Emergencia> listar() {
+        return emergenciaService.listarEmergencias();
+    }
+
+    @GetMapping("/{id}")
+    public Emergencia buscar(@PathVariable Long id) {
+        return emergenciaService.buscarPorId(id);
     }
 }
