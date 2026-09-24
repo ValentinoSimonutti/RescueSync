@@ -16,10 +16,26 @@ public class ONG {
 
     private String nombre;
 
-    @OneToMany
+    @OneToMany(mappedBy = "ong")
     private List<Oferta> ofertas= new ArrayList<Oferta>();
 
     public ONG(){
 
+    }
+
+    public ONG(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 }

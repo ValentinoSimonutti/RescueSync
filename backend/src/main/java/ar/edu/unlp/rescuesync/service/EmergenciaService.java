@@ -4,8 +4,7 @@ import ar.edu.unlp.rescuesync.entity.Emergencia;
 import ar.edu.unlp.rescuesync.entity.Municipio;
 import ar.edu.unlp.rescuesync.repository.EmergenciaRepository;
 import ar.edu.unlp.rescuesync.repository.MunicipioRepository;
-import jakarta.transaction.Transactional;
-import org.springframework.data.annotation.ReadOnlyProperty;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,6 +25,7 @@ public class EmergenciaService {
 
     @Transactional
     public Emergencia registrarEmergencia(Emergencia e){
+        // queda asi como prueba inicial. dsp seria el id del municipio que se loguea
         long id = 1;
         Municipio m = municipioRepository
                 .findById(id)
@@ -35,20 +35,15 @@ public class EmergenciaService {
         return emergenciaRepository.save(e);
     }
 
-    @Transactional
-    @ReadOnlyProperty
+    @Transactional(readOnly = true)
     public List<Emergencia> listarEmergencias(){
         return this.emergenciaRepository.findAll();
     }
 
-    @Transactional
-    @ReadOnlyProperty
+    @Transactional(readOnly = true)
     public Emergencia buscarPorId(Long id) {
         return emergenciaRepository.findById(id)
                 .orElseThrow();
     }
-
-
-
 
 }
