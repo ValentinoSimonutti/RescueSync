@@ -85,5 +85,6 @@ public class Emergencia {
 
     public void addLote(Lote lote) {
         this.lotes.add(lote);
+        lote.setEmergencia(this);
     }
 }

@@ -2,6 +2,7 @@ package ar.edu.unlp.rescuesync.entity;
 
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -19,5 +20,13 @@ public class Lote {
     private Emergencia emergencia;
 
     @OneToMany(mappedBy="lote")
-    private List<Oferta> ofertas;
+    private List<Oferta> ofertas= new ArrayList<Oferta>();
+
+    public Lote(){
+
+    }
+
+    public void setEmergencia(Emergencia emergencia) {
+        this.emergencia=emergencia;
+    }
 }

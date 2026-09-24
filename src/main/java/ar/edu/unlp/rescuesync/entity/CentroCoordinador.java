@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 public class CentroCoordinador {
 
     // es el que va a publicar los lotes
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

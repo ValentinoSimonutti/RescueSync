@@ -19,4 +19,9 @@ public class Oferta {
 
     @ManyToOne
     private Lote lote;
+
+    public Oferta(){
+
+    }
+
 }

@@ -1,6 +1,18 @@
 spring:
   application:
     name: rescuesync
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/rescuesync
+    username: rescuesync
+    password: rescuesync
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# viejo
+#autoconfigure:
+#  exclude:
+#    - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration

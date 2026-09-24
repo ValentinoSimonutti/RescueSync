@@ -9,7 +9,6 @@ import java.util.List;
 public class Municipio {
 
     // es el que va a publicar las emergencias
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,6 +39,7 @@ public class Municipio {
 
     public void cargarEmergencia(Emergencia emergencia) {
         this.emergencias.add(emergencia);
+        emergencia.setMunicipio(this);
     }
 
     public List<Emergencia> listarEmergencias() {

@@ -1,0 +1,19 @@
+services:
+
+  postgres:
+    image: postgres:17
+    container_name: rescuesync-postgres
+
+    environment:
+      POSTGRES_DB: rescuesync
+      POSTGRES_USER: rescuesync
+      POSTGRES_PASSWORD: rescuesync
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
