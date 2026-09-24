@@ -1,36 +1,15 @@
-package ar.edu.unlp.rescuesync.entity;
+ package ar.edu.unlp.rescuesync.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+    import jakarta.persistence.Entity;
 
-@Entity
-public class CentroCoordinador {
+    @Entity
+    public class CentroCoordinador extends Organizacion {
+        // es el que va a publicar los lotes
 
-    // es el que va a publicar los lotes
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+        protected CentroCoordinador() {
+        }
 
-    private String nombre;
-
-    public CentroCoordinador() {
+        public CentroCoordinador(String nombre) {
+            super(nombre);
+        }
     }
-
-    public CentroCoordinador(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-}

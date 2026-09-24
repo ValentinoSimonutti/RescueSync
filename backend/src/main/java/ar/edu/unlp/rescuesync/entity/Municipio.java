@@ -6,35 +6,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-public class Municipio {
-
+public class Municipio extends Organizacion {
     // es el que va a publicar las emergencias
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    private String nombre;
+    @OneToMany(mappedBy = "municipio")
+    private List<Emergencia> emergencias = new ArrayList<>();
 
-    @OneToMany(mappedBy="municipio")
-    private List<Emergencia> emergencias = new ArrayList<Emergencia>();
+    protected Municipio() {
+    }
 
     public Municipio(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public Municipio() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
+        super(nombre);
     }
 
     public void cargarEmergencia(Emergencia emergencia) {
@@ -42,7 +24,7 @@ public class Municipio {
         emergencia.setMunicipio(this);
     }
 
-    public List<Emergencia> listarEmergencias() {
+    public List<Emergencia> getEmergencias() {
         return emergencias;
     }
 }
