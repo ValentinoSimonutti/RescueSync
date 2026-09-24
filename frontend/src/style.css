@@ -1,3 +1,18 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -157,15 +172,8 @@ code {
 }
 
 #app {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  border: 0;
 }
 
 #center {
@@ -292,5 +300,123 @@ code {
   &::after {
     right: 0;
     border-right-color: var(--border);
+  }
+
+}
+
+/* Pantalla de bienvenida de RescueSync */
+.pantalla-inicio {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  padding: 32px 20px;
+  color: #e8eef7;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(37, 99, 143, 0.32), transparent 55%),
+    linear-gradient(145deg, #101c2b 0%, #14283a 55%, #102333 100%);
+}
+
+.inicio-card {
+  width: min(100%, 620px);
+  box-sizing: border-box;
+  padding: clamp(36px, 7vw, 68px);
+  text-align: center;
+}
+
+.inicio-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.inicio-icono {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  background: rgba(248, 91, 79, 0.14);
+  border: 1px solid rgba(248, 91, 79, 0.28);
+  border-radius: 16px;
+  font-size: 27px;
+}
+
+.inicio-titulo {
+  margin: 0;
+  color: #f5f8fc;
+  font-size: clamp(38px, 8vw, 54px);
+  font-weight: 700;
+  letter-spacing: -2px;
+}
+
+.inicio-etiqueta {
+  display: inline-block;
+  margin: 30px 0 14px;
+  color: #80c8d5;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.inicio-subtitulo {
+  max-width: 440px;
+  margin: 0 auto 16px;
+  color: #f0f4f8;
+  font-size: clamp(23px, 4vw, 30px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.6px;
+}
+
+.inicio-descripcion {
+  max-width: 410px;
+  margin: 0 auto;
+  color: #aebdca;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.btn-ingresar {
+  display: inline-flex;
+  min-width: 190px;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 34px;
+  padding: 15px 22px;
+  color: #fff;
+  background: #e4554f;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(228, 85, 79, 0.24);
+  transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.btn-ingresar:hover {
+  background: #f0645c;
+  box-shadow: 0 10px 26px rgba(228, 85, 79, 0.34);
+  transform: translateY(-2px);
+}
+
+.btn-ingresar:focus-visible {
+  outline: 3px solid #f5b2ad;
+  outline-offset: 4px;
+}
+
+@media (max-width: 480px) {
+  .inicio-logo {
+    gap: 10px;
+  }
+
+  .inicio-icono {
+    width: 46px;
+    height: 46px;
+    font-size: 23px;
   }
 }

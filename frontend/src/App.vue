@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import EmergenciaForm from "./components/EmergenciaForm.vue";
+import PantallaInicio from "./components/PantallaInicio.vue";
 </script>
 
 <template>
-  <EmergenciaForm />
+  <PantallaInicio />
 </template>
