@@ -1,8 +1,9 @@
 package ar.edu.unlp.rescuesync.controllers;
 
-import ar.edu.unlp.rescuesync.entity.Lote;
 import ar.edu.unlp.rescuesync.service.LoteService;
 import org.springframework.web.bind.annotation.*;
+import ar.edu.unlp.rescuesync.dto.LoteDTO;
+import ar.edu.unlp.rescuesync.dto.NuevoLoteDTO;
 
 @RestController
 @RequestMapping("/api/lotes")
@@ -15,11 +16,10 @@ public class LoteController {
     }
 
     @PostMapping
-    public Lote crear(
-            @RequestBody Lote lote,
+    public LoteDTO crear(
+            @RequestBody NuevoLoteDTO dto,
             @RequestParam Long emergenciaId) {
 
-        return loteService.crearLote(lote, emergenciaId);
-
+        return loteService.crearLote(dto, emergenciaId);
     }
 }

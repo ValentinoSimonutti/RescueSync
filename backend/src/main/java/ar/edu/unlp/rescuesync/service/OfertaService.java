@@ -1,5 +1,7 @@
 package ar.edu.unlp.rescuesync.service;
 
+import ar.edu.unlp.rescuesync.dto.OfertaDTO;
+import ar.edu.unlp.rescuesync.dto.NuevaOfertaDTO;
 import ar.edu.unlp.rescuesync.entity.Lote;
 import ar.edu.unlp.rescuesync.entity.ONG;
 import ar.edu.unlp.rescuesync.entity.Oferta;
@@ -27,7 +29,7 @@ public class OfertaService {
     }
 
     @Transactional
-    public Oferta crearOferta(Oferta oferta, Long ongId, Long loteId) {
+    public OfertaDTO crearOferta(NuevaOfertaDTO dto, Long ongId, Long loteId) {
 
         ONG ong = ongRepository
                 .findById(ongId)
@@ -37,8 +39,27 @@ public class OfertaService {
                 .findById(loteId)
                 .orElseThrow();
 
-        oferta.setOng(ong);
-        oferta.setLote(lote);
-        return ofertaRepository.save(oferta);
+        Oferta oferta = new Oferta(
+                dto.getCantidad(),
+                dto.getRecurso(),
+                ong,
+                lote
+        );
+
+        Oferta guardada = ofertaRepository.save(oferta);
+
+        return convertirADTO(guardada);
+    }
+
+    private OfertaDTO convertirADTO(Oferta oferta) {
+        OfertaDTO dto = new OfertaDTO();
+
+        dto.setId(oferta.getId());
+        dto.setCantidad(oferta.getCantidad());
+        dto.setRecurso(oferta.getRecurso());
+        dto.setOngId(oferta.getOng().getId());
+        dto.setLoteId(oferta.getLote().getId());
+
+        return dto;
     }
 }

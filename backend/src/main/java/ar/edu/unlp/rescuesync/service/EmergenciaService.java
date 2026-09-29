@@ -1,5 +1,6 @@
 package ar.edu.unlp.rescuesync.service;
 
+import ar.edu.unlp.rescuesync.dto.EmergenciaDTO;
 import ar.edu.unlp.rescuesync.dto.NuevaEmergenciaDTO;
 import ar.edu.unlp.rescuesync.entity.Emergencia;
 import ar.edu.unlp.rescuesync.entity.Municipio;
@@ -25,7 +26,7 @@ public class EmergenciaService {
     }
 
     @Transactional
-    public Emergencia registrarEmergencia(NuevaEmergenciaDTO dto){
+    public EmergenciaDTO registrarEmergencia(NuevaEmergenciaDTO dto){
 
         // TODO: tomar del usuario logueado. Por ahora dejamos el 1L directo para que siga funcionando
         Municipio m = municipioRepository
@@ -42,18 +43,40 @@ public class EmergenciaService {
         );
 
         m.cargarEmergencia(e);
-        return emergenciaRepository.save(e);
+
+        Emergencia guardada = emergenciaRepository.save(e);
+        return convertirADTO(guardada);
     }
 
     @Transactional(readOnly = true)
-    public List<Emergencia> listarEmergencias(){
-        return this.emergenciaRepository.findAll();
+    public List<EmergenciaDTO> listarEmergencias() {
+        return emergenciaRepository.findAll()
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public Emergencia buscarPorId(Long id) {
-        return emergenciaRepository.findById(id)
+    public EmergenciaDTO buscarPorId(Long id) {
+        Emergencia emergencia = emergenciaRepository.findById(id)
                 .orElseThrow();
+
+        return convertirADTO(emergencia);
+    }
+
+    private EmergenciaDTO convertirADTO(Emergencia emergencia) {
+        EmergenciaDTO dto = new EmergenciaDTO();
+
+        dto.setId(emergencia.getId());
+        dto.setZonaAfectada(emergencia.getZonaAfectada());
+        dto.setDescripcion(emergencia.getDescripcion());
+        dto.setTipoDesastre(emergencia.getTipoDesastre());
+        dto.setGravedad(emergencia.getGravedad());
+        dto.setBonitaCaseId(emergencia.getBonitaCaseId());
+        dto.setEstado(emergencia.getEstado());
+        dto.setFechaCierreOfertas(emergencia.getFechaCierreOfertas());
+
+        return dto;
     }
 
 }

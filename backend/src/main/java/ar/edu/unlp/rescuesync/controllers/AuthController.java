@@ -1,3 +1,4 @@
+/*
 package ar.edu.unlp.rescuesync.controllers;
 
 import ar.edu.unlp.rescuesync.auth.Usuario;
@@ -22,3 +23,4 @@ public class AuthController {
         return authService.login(email, password);
     }
 }
+ */

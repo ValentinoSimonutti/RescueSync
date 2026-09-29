@@ -1,3 +1,4 @@
+/*
 package ar.edu.unlp.rescuesync.service;
 
 import ar.edu.unlp.rescuesync.auth.Usuario;
@@ -31,3 +32,4 @@ public class AuthService {
         return usuario;
     }
 }
+ */
