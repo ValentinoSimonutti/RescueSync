@@ -1,5 +1,6 @@
 package ar.edu.unlp.rescuesync.service;
 
+import ar.edu.unlp.rescuesync.dto.NuevaEmergenciaDTO;
 import ar.edu.unlp.rescuesync.entity.Emergencia;
 import ar.edu.unlp.rescuesync.entity.Municipio;
 import ar.edu.unlp.rescuesync.repository.EmergenciaRepository;
@@ -24,12 +25,21 @@ public class EmergenciaService {
     }
 
     @Transactional
-    public Emergencia registrarEmergencia(Emergencia e){
-        // queda asi como prueba inicial. dsp seria el id del municipio que se loguea
-        long id = 1;
+    public Emergencia registrarEmergencia(NuevaEmergenciaDTO dto){
+
+        // TODO: tomar del usuario logueado. Por ahora dejamos el 1L directo para que siga funcionando
         Municipio m = municipioRepository
-                .findById(id)
+                .findById(1L)
                 .orElseThrow();
+
+        // Armamos la entidad real usando los datos que vinieron en el DTO
+        Emergencia e = new Emergencia(
+                dto.getZonaAfectada(),
+                dto.getDescripcion(),
+                dto.getTipoDesastre(),
+                dto.getGravedad(),
+                m
+        );
 
         m.cargarEmergencia(e);
         return emergenciaRepository.save(e);

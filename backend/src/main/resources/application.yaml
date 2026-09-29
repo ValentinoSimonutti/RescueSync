@@ -12,6 +12,12 @@ spring:
       ddl-auto: update
     show-sql: true
 
+server:
+  port: 8081
+bonita:
+  url: http://localhost:8080/bonita
+  process-name: RescueSync
+
 # viejo
 #autoconfigure:
 #  exclude:

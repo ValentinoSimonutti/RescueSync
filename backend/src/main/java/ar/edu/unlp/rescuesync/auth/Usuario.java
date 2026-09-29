@@ -17,8 +17,8 @@ public class Usuario {
     @Column(nullable = false, unique = true)
     private String email;
 
-    // falta hashearla
-    private String password;
+    // username para bonita
+    private String bonitaUsername;
 
     @Enumerated(EnumType.STRING)
     private Rol rol;
@@ -33,14 +33,12 @@ public class Usuario {
             String nombre,
             String apellido,
             String email,
-            String password,
             Rol rol,
             Organizacion organizacion) {
 
         this.nombre = nombre;
         this.apellido = apellido;
         this.email = email;
-        this.password = password;
 
         asignarRol(rol);
         asignarOrganizacion(organizacion);
@@ -74,12 +72,12 @@ public class Usuario {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    public String getBonitaUsername() {
+        return bonitaUsername;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setBonitaUsername(String bonitaUsername) {
+        this.bonitaUsername = bonitaUsername;
     }
 
     public Rol getRol() {

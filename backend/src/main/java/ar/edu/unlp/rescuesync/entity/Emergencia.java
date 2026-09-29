@@ -1,9 +1,11 @@
 package ar.edu.unlp.rescuesync.entity;
 
+import ar.edu.unlp.rescuesync.entity.enums.EstadoEmergencia;
 import ar.edu.unlp.rescuesync.entity.enums.Gravedad;
 import ar.edu.unlp.rescuesync.entity.enums.TipoDesastre;
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -22,6 +24,13 @@ public class Emergencia {
     @Enumerated(EnumType.STRING)
     private Gravedad gravedad;
 
+    private Long bonitaCaseId;
+
+    private LocalDateTime fechaCierreOfertas;
+
+    @Enumerated(EnumType.STRING)
+    private EstadoEmergencia estado;
+
     @ManyToOne
     private Municipio municipio;
 
@@ -37,6 +46,7 @@ public class Emergencia {
         this.tipoDesastre = tipoDesastre;
         this.gravedad = gravedad;
         this.municipio = municipio;
+        this.estado = EstadoEmergencia.REGISTRADA;
     }
 
     public String getZonaAfectada() {
@@ -69,6 +79,30 @@ public class Emergencia {
 
     public void setGravedad(Gravedad gravedad) {
         this.gravedad = gravedad;
+    }
+
+    public Long getBonitaCaseId() {
+        return bonitaCaseId;
+    }
+
+    public void setBonitaCaseId(Long bonitaCaseId) {
+        this.bonitaCaseId = bonitaCaseId;
+    }
+
+    public LocalDateTime getFechaCierreOfertas() {
+        return fechaCierreOfertas;
+    }
+
+    public void setFechaCierreOfertas(LocalDateTime fechaCierreOfertas) {
+        this.fechaCierreOfertas = fechaCierreOfertas;
+    }
+
+    public EstadoEmergencia getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoEmergencia estado) {
+        this.estado = estado;
     }
 
     public Municipio getMunicipio() {
