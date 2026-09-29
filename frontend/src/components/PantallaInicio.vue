@@ -1,3 +1,9 @@
+<script setup lang="ts">
+defineEmits<{
+  ingresar: [];
+}>();
+</script>
+
 <template>
   <main class="pantalla-inicio">
     <section class="inicio-card">
@@ -17,7 +23,7 @@
         situaciones de emergencia.
       </p>
 
-      <button class="btn-ingresar">
+      <button class="btn-ingresar" @click="$emit('ingresar')">
         Ingresar <span aria-hidden="true">→</span>
       </button>
 
