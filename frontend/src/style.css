@@ -498,3 +498,317 @@ code {
   margin-bottom: 16px;
   border-bottom: 1px solid #ddd;
 }
+
+/* Formulario de registro de emergencia */
+.emergencia-card {
+  width: min(100%, 620px);
+  margin: 32px auto;
+  padding: clamp(28px, 5vw, 44px);
+  color: #e8eef7;
+  background: linear-gradient(145deg, #14283a 0%, #102333 100%);
+  border: 1px solid rgba(174, 189, 202, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(16, 28, 43, 0.14);
+}
+
+.emergencia-etiqueta {
+  margin: 0 0 10px;
+}
+
+.emergencia-titulo {
+  margin: 0 0 28px;
+  color: #f5f8fc;
+  font-size: clamp(28px, 5vw, 36px);
+  font-weight: 600;
+  letter-spacing: -1px;
+}
+
+.emergencia-campo {
+  display: grid;
+  gap: 7px;
+  margin-top: 18px;
+  color: #d8e2ec;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.emergencia-campo input,
+.emergencia-campo textarea,
+.emergencia-campo select {
+  width: 100%;
+  padding: 13px 14px;
+  color: #f5f8fc;
+  background: rgba(8, 20, 32, 0.62);
+  border: 1px solid rgba(174, 189, 202, 0.3);
+  border-radius: 9px;
+  font: inherit;
+}
+
+.emergencia-campo textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.emergencia-campo select option {
+  color: #f5f8fc;
+  background: #14283a;
+}
+
+.emergencia-campo input:focus-visible,
+.emergencia-campo textarea:focus-visible,
+.emergencia-campo select:focus-visible {
+  outline: 2px solid #80c8d5;
+  outline-offset: 2px;
+}
+
+.emergencia-submit {
+  width: 100%;
+  margin-top: 26px;
+}
+
+.emergencia-submit:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.emergencia-mensaje,
+.emergencia-error {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  font-size: 14px;
+}
+
+.emergencia-mensaje {
+  color: #b9f2d0;
+  background: rgba(52, 168, 104, 0.13);
+  border: 1px solid rgba(113, 211, 153, 0.3);
+}
+
+.emergencia-error {
+  color: #ffc2bd;
+  background: rgba(228, 85, 79, 0.13);
+  border: 1px solid rgba(240, 100, 92, 0.3);
+}
+
+@media (max-width: 480px) {
+  .emergencia-card {
+    margin: 16px auto;
+    padding: 24px 20px;
+  }
+}
+
+/* Ajustes compactos para la pantalla del operador */
+.panel {
+  width: min(100%, 1040px);
+  max-width: none;
+  height: 100%;
+  overflow-y: auto;
+  padding: 14px 24px 24px;
+  color: #e8eef7;
+}
+
+.panel-header {
+  padding: 0 0 10px;
+  margin-bottom: 10px;
+  color: #d8e2ec;
+  font-size: 14px;
+  border-color: rgba(174, 189, 202, 0.2);
+}
+
+.panel-header button {
+  padding: 9px 14px;
+  color: #fff;
+  background: #e4554f;
+  border: 0;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.panel-header button:hover {
+  background: #f0645c;
+}
+
+.panel-header button:focus-visible {
+  outline: 2px solid #80c8d5;
+  outline-offset: 3px;
+}
+
+.emergencia-card {
+  width: min(100%, 560px);
+  margin: 12px auto;
+  padding: 20px 26px;
+  border-radius: 12px;
+}
+
+.emergencia-etiqueta {
+  font-size: 10px;
+}
+
+.emergencia-titulo {
+  margin-bottom: 16px;
+  font-size: 28px;
+}
+
+.emergencia-campo {
+  gap: 5px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.emergencia-campo input,
+.emergencia-campo textarea,
+.emergencia-campo select {
+  padding: 9px 11px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.emergencia-campo textarea {
+  min-height: 64px;
+}
+
+.emergencia-submit {
+  min-height: 42px;
+  margin-top: 16px;
+  padding: 10px 18px;
+}
+
+@media (max-width: 600px) {
+  .panel {
+    padding: 12px 14px 20px;
+  }
+
+  .panel-header {
+    align-items: flex-start;
+  }
+
+  .panel-header button {
+    flex: 0 0 auto;
+  }
+
+  .emergencia-card {
+    padding: 18px;
+  }
+}
+
+/* El formulario comparte el estilo simple del login, sin tarjeta */
+.emergencia-card {
+  width: min(100%, 500px);
+  margin: 12px auto;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.emergencia-etiqueta {
+  display: block;
+  margin: 0 0 12px;
+  text-align: center;
+}
+
+.emergencia-titulo {
+  margin: 0 0 24px;
+  text-align: center;
+  font-size: clamp(26px, 4vw, 32px);
+}
+
+.emergencia-campo {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.emergencia-campo input,
+.emergencia-campo textarea,
+.emergencia-campo select {
+  padding: 12px 14px;
+  font-size: 14px;
+}
+
+.emergencia-campo textarea {
+  min-height: 76px;
+}
+
+.emergencia-submit {
+  min-height: 52px;
+  margin-top: 24px;
+  padding: 13px 20px;
+}
+
+@media (max-width: 600px) {
+  .emergencia-card {
+    padding: 0;
+  }
+}
+
+/* Fondo y tipografía compartidos con inicio y login */
+.panel {
+  width: 100%;
+  padding: 14px 24px 18px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(37, 99, 143, 0.32), transparent 55%),
+    linear-gradient(145deg, #101c2b 0%, #14283a 55%, #102333 100%);
+}
+
+.panel-header {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.emergencia-card {
+  margin-top: 4px;
+}
+
+.emergencia-etiqueta {
+  margin-bottom: 6px;
+}
+
+.emergencia-titulo {
+  margin-bottom: 14px;
+  font-size: 27px;
+}
+
+.emergencia-campo {
+  gap: 4px;
+  margin-top: 11px;
+  font-size: 13px;
+}
+
+.emergencia-campo input,
+.emergencia-campo textarea,
+.emergencia-campo select {
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+.emergencia-campo textarea {
+  min-height: 58px;
+}
+
+.emergencia-submit {
+  min-height: 46px;
+  margin-top: 17px;
+  padding: 10px 18px;
+}
+
+@media (max-width: 600px) {
+  .panel {
+    padding: 12px 16px;
+  }
+
+  .panel-header {
+    gap: 8px;
+  }
+
+  .emergencia-titulo {
+    font-size: 25px;
+  }
+}

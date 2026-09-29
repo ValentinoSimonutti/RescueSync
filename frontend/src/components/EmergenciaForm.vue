@@ -45,10 +45,11 @@ async function registrarEmergencia() {
 </script>
 
 <template>
-  <section>
-    <h1>Registrar emergencia</h1>
+  <section class="emergencia-card">
+    <span class="inicio-etiqueta emergencia-etiqueta">NUEVO REPORTE</span>
+    <h1 class="emergencia-titulo">Registrar emergencia</h1>
 
-    <div>
+    <div class="emergencia-campo">
       <label for="zona">Zona afectada</label>
       <input
         id="zona"
@@ -57,7 +58,7 @@ async function registrarEmergencia() {
       />
     </div>
 
-    <div>
+    <div class="emergencia-campo">
       <label for="descripcion">Descripción</label>
       <textarea
         id="descripcion"
@@ -65,7 +66,7 @@ async function registrarEmergencia() {
       ></textarea>
     </div>
 
-    <div>
+    <div class="emergencia-campo">
       <label for="tipo">Tipo de desastre</label>
 
       <select id="tipo" v-model="tipoDesastre">
@@ -76,7 +77,7 @@ async function registrarEmergencia() {
       </select>
     </div>
 
-    <div>
+    <div class="emergencia-campo">
       <label for="gravedad">Gravedad</label>
 
       <select id="gravedad" v-model="gravedad">
@@ -88,17 +89,19 @@ async function registrarEmergencia() {
     </div>
 
     <button
+      class="btn-ingresar emergencia-submit"
+      type="button"
       @click="registrarEmergencia"
       :disabled="cargando"
     >
       {{ cargando ? "Registrando..." : "Registrar" }}
     </button>
 
-    <p v-if="mensaje">
+    <p v-if="mensaje" class="emergencia-mensaje">
       {{ mensaje }}
     </p>
 
-    <p v-if="error">
+    <p v-if="error" class="emergencia-error">
       {{ error }}
     </p>
   </section>
