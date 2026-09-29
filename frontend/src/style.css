@@ -474,3 +474,27 @@ code {
     font-size: 23px;
   }
 }
+
+/* --- login: mensaje de error --- */
+.login-error {
+  color: #c62828;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* --- panel del usuario logueado --- */
+.panel {
+  padding: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #ddd;
+}
