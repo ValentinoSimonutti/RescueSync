@@ -18,6 +18,7 @@ public class Usuario {
     private String email;
 
     // username para bonita
+    @Column(nullable = false, unique = true)
     private String bonitaUsername;
 
     @Enumerated(EnumType.STRING)
@@ -33,12 +34,14 @@ public class Usuario {
             String nombre,
             String apellido,
             String email,
+            String bonitaUsername,
             Rol rol,
             Organizacion organizacion) {
 
         this.nombre = nombre;
         this.apellido = apellido;
         this.email = email;
+        this.bonitaUsername = bonitaUsername;
 
         asignarRol(rol);
         asignarOrganizacion(organizacion);
