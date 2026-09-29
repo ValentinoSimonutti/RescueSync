@@ -1,6 +1,12 @@
 package ar.edu.unlp.rescuesync.controllers;
 
+import ar.edu.unlp.rescuesync.auth.Rol;
+import ar.edu.unlp.rescuesync.auth.SesionActual;
+import ar.edu.unlp.rescuesync.auth.UsuarioLogueado;
 import ar.edu.unlp.rescuesync.service.EmergenciaService;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import ar.edu.unlp.rescuesync.dto.NuevaEmergenciaDTO;
 import ar.edu.unlp.rescuesync.dto.EmergenciaDTO;
@@ -12,14 +18,26 @@ import java.util.List;
 public class EmergenciaController {
 
     private final EmergenciaService emergenciaService;
+    private final SesionActual sesionActual;       // NUEVO: para saber quién está logueado
 
-    public EmergenciaController(EmergenciaService emergenciaService) {
+    public EmergenciaController(EmergenciaService emergenciaService, SesionActual sesionActual) {
         this.emergenciaService = emergenciaService;
+        this.sesionActual = sesionActual;
     }
 
     @PostMapping
-    public EmergenciaDTO registrar(@RequestBody NuevaEmergenciaDTO dto) {
-        return emergenciaService.registrarEmergencia(dto);
+    public EmergenciaDTO registrar(@RequestBody NuevaEmergenciaDTO dto, HttpSession session) {
+
+        // Quién hace la acción (401 si no hay sesión)
+        UsuarioLogueado usuario = sesionActual.obtener(session);
+
+        // Solo un operador municipal puede registrar emergencias (403 si no)
+        if (usuario.rol() != Rol.OPERADOR_MUNICIPAL) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Solo un operador municipal puede registrar emergencias");
+        }
+
+        return emergenciaService.registrarEmergencia(dto, usuario);
     }
 
     @GetMapping

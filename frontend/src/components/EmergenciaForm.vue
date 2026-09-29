@@ -29,14 +29,16 @@ async function registrarEmergencia() {
   try {
     const emergencia = await crearEmergencia(datos);
 
-    mensaje.value = `Emergencia registrada correctamente. ID: ${emergencia.id}`;
+    // Muestra también el case de Bonita: prueba de que el proceso arrancó
+    mensaje.value = `Emergencia registrada correctamente. ID: ${emergencia.id} · Case en Bonita: ${emergencia.bonitaCaseId}`;
 
     zonaAfectada.value = "";
     descripcion.value = "";
     tipoDesastre.value = "";
     gravedad.value = "";
   } catch (e) {
-    error.value = "No se pudo registrar la emergencia.";
+    // Mostramos el mensaje real del backend (ej: Bonita apagado, sin permiso)
+    error.value = e instanceof Error ? e.message : "No se pudo registrar la emergencia.";
     console.error(e);
   } finally {
     cargando.value = false;

@@ -13,6 +13,8 @@ export interface Emergencia {
   descripcion: string;
   tipoDesastre: string;
   gravedad: string;
+  estado: string;
+  bonitaCaseId: number | null;   // case creado en Bonita para esta emergencia
 }
 
 export function crearEmergencia(
