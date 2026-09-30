@@ -4,6 +4,7 @@ import PantallaInicio from "./components/PantallaInicio.vue";
 import Login from "./components/Login.vue";
 import EmergenciaForm from "./components/EmergenciaForm.vue";
 import BandejaTareas from "./components/BandejaTareas.vue";
+import GenerarLotesForm from "./components/GenerarLotesForm.vue";
 import type { Tarea } from "./services/tareaService";
 import { logout, usuarioActual, type Usuario } from "./services/authService";
 
@@ -49,12 +50,19 @@ async function salir() {
     <template v-else-if="usuario.rol === 'CCR'">
       <BandejaTareas v-if="!tareaSeleccionada" @seleccionar="tareaSeleccionada = $event" />
 
-      <!-- Parte 2: acá va a ir el formulario de "Generar lotes" -->
+      <!-- Cada tarea abre su propio formulario según su nombre -->
+      <GenerarLotesForm
+        v-else-if="tareaSeleccionada.nombreTarea === 'Generar lotes'"
+        :tarea="tareaSeleccionada"
+        @volver="tareaSeleccionada = null"
+        @publicado="tareaSeleccionada = null"
+      />
+
+      <!-- Tareas que todavía no tienen pantalla (ej: Evaluar curso alternativo) -->
       <section v-else class="emergencia-card">
         <h1 class="emergencia-titulo">{{ tareaSeleccionada.nombreTarea }}</h1>
-        <p>Emergencia #{{ tareaSeleccionada.emergencia.id }} · {{ tareaSeleccionada.emergencia.zonaAfectada }}</p>
-        <p>El formulario de lotes llega en la Parte 2.</p>
-        <button type="button" @click="tareaSeleccionada = null">Volver a la bandeja</button>
+        <p>Esta tarea todavía no tiene pantalla.</p>
+        <button type="button" class="bandeja-actualizar" @click="tareaSeleccionada = null">Volver a la bandeja</button>
       </section>
     </template>
 

@@ -877,3 +877,41 @@ code {
 .bandeja-boton {
   margin: 0;
 }
+
+/* --- formulario de lotes --- */
+.lote-fila {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.lote-recurso {
+  flex: 2 1 180px;
+}
+
+.lote-cantidad {
+  flex: 1 1 90px;
+}
+
+.lote-quitar {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+
+.lote-quitar:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.lote-acciones {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}

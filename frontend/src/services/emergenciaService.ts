@@ -22,3 +22,20 @@ export function crearEmergencia(
 ): Promise<Emergencia> {
   return post<Emergencia>("/emergencias", datos);
 }
+
+// Un lote de necesidad: ej { recurso: "Paramédicos", cantidad: 5 }
+export interface NuevoLote {
+  recurso: string;
+  cantidad: number;
+}
+
+// Lo que manda el coordinador al publicar la convocatoria (PublicarLotesDTO en Java)
+export interface PublicarLotesRequest {
+  duracionMinutos: number;   // duración de la ventana de ofertas (el timer de Bonita)
+  lotes: NuevoLote[];
+}
+
+// POST /api/emergencias/{id}/lotes -> guarda los lotes y completa "Generar lotes" en Bonita
+export function publicarLotes(emergenciaId: number, datos: PublicarLotesRequest): Promise<Emergencia> {
+  return post<Emergencia>(`/emergencias/${emergenciaId}/lotes`, datos);
+}

@@ -10,6 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import ar.edu.unlp.rescuesync.dto.NuevaEmergenciaDTO;
 import ar.edu.unlp.rescuesync.dto.EmergenciaDTO;
+import ar.edu.unlp.rescuesync.dto.PublicarLotesDTO;
 
 import java.util.List;
 
@@ -38,6 +39,24 @@ public class EmergenciaController {
         }
 
         return emergenciaService.registrarEmergencia(dto, usuario);
+    }
+
+    // POST /api/emergencias/{id}/lotes -> el coordinador publica la convocatoria
+    // @PathVariable toma el {id} de la URL; @RequestBody convierte el JSON en PublicarLotesDTO
+    @PostMapping("/{id}/lotes")
+    public EmergenciaDTO publicarLotes(@PathVariable Long id,
+                                       @RequestBody PublicarLotesDTO dto,
+                                       HttpSession session) {
+
+        UsuarioLogueado usuario = sesionActual.obtener(session);   // 401 si no hay sesión
+
+        // Solo el Centro Coordinador Regional arma los lotes (403 si no)
+        if (usuario.rol() != Rol.CCR) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Solo el centro coordinador puede publicar lotes");
+        }
+
+        return emergenciaService.publicarLotes(id, dto, usuario);
     }
 
     @GetMapping
