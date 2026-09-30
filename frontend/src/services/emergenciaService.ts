@@ -1,4 +1,4 @@
-import { post } from "./api";
+import { get, post } from "./api";
 
 export interface CrearEmergenciaRequest {
   zonaAfectada: string;
@@ -38,4 +38,9 @@ export interface PublicarLotesRequest {
 // POST /api/emergencias/{id}/lotes -> guarda los lotes y completa "Generar lotes" en Bonita
 export function publicarLotes(emergenciaId: number, datos: PublicarLotesRequest): Promise<Emergencia> {
   return post<Emergencia>(`/emergencias/${emergenciaId}/lotes`, datos);
+}
+
+// El backend filtra por el municipio de la sesión actual.
+export function misEmergencias(): Promise<Emergencia[]> {
+  return get<Emergencia[]>("/emergencias/mias");
 }

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import FiltrosEmergencias from "./FiltrosEmergencias.vue";
+import { useFiltrosEmergencias } from "../composables/useFiltrosEmergencias";
 import { misTareas, type Tarea } from "../services/tareaService";
+
+defineProps<{ mensaje?: string }>();
 
 // Avisa a App.vue qué tarea eligió el usuario (para abrir su formulario)
 defineEmits<{
@@ -8,6 +12,7 @@ defineEmits<{
 }>();
 
 const tareas = ref<Tarea[]>([]);
+const { zona, gravedad, tipo, orden, resultados, limpiar } = useFiltrosEmergencias(tareas, tarea => tarea.emergencia);
 const cargando = ref(true);
 const error = ref("");
 
@@ -52,13 +57,26 @@ onMounted(cargar);
       </button>
     </div>
 
+    <p v-if="mensaje" class="emergencia-mensaje" role="status">{{ mensaje }}</p>
+
+    <FiltrosEmergencias
+      v-model:zona="zona"
+      v-model:gravedad="gravedad"
+      v-model:tipo="tipo"
+      v-model:orden="orden"
+      @limpiar="limpiar"
+    />
+
     <p v-if="cargando">Cargando tareas...</p>
     <p v-else-if="error" class="emergencia-error">{{ error }}</p>
     <p v-else-if="tareas.length === 0" class="bandeja-vacia">No tenés tareas pendientes.</p>
 
     <!-- Una tarjeta por tarea -->
+    <p v-else-if="resultados.length === 0" class="bandeja-vacia" role="status">
+      No hay resultados que coincidan con los filtros.
+    </p>
     <ul v-else class="bandeja-lista">
-      <li v-for="tarea in tareas" :key="tarea.tareaId" class="bandeja-item">
+      <li v-for="tarea in resultados" :key="tarea.tareaId" class="bandeja-item">
         <div class="bandeja-item-superior">
           <span class="bandeja-tipo">{{ mostrarTipoDesastre(tarea.emergencia.tipoDesastre) }}</span>
           <span class="bandeja-separador" aria-hidden="true">·</span>

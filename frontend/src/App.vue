@@ -1,14 +1,50 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import PantallaInicio from "./components/PantallaInicio.vue";
 import Login from "./components/Login.vue";
 import EmergenciaForm from "./components/EmergenciaForm.vue";
+import MisEmergencias from "./components/MisEmergencias.vue";
 import BandejaTareas from "./components/BandejaTareas.vue";
 import GenerarLotesForm from "./components/GenerarLotesForm.vue";
 import type { Tarea } from "./services/tareaService";
 import { logout, usuarioActual, type Usuario } from "./services/authService";
 
-const mostrarLogin = ref(false);
+const modalSalir = ref<HTMLDialogElement | null>(null);
+const cerrandoSesion = ref(false);
+const errorSalir = ref("");
+
+function pedirConfirmacionSalir() {
+  errorSalir.value = "";
+  modalSalir.value?.showModal();
+}
+
+function cancelarSalida() {
+  if (!cerrandoSesion.value) modalSalir.value?.close();
+}
+
+const mensajeMunicipio = ref("");
+const mensajeCoordinador = ref("");
+
+function alPublicarLotes() {
+  mensajeCoordinador.value = "Convocatoria publicada con éxito.";
+  tareaSeleccionada.value = null;
+}
+
+function seleccionarTarea(tarea: Tarea) {
+  mensajeCoordinador.value = "";
+  tareaSeleccionada.value = tarea;
+}
+
+function cambiarPantallaMunicipio(pantalla: "registrar" | "misEmergencias") {
+  mensajeMunicipio.value = "";
+  pantallaMunicipio.value = pantalla;
+}
+
+function alRegistrarEmergencia() {
+  mensajeMunicipio.value = "Emergencia registrada con éxito.";
+  pantallaMunicipio.value = "misEmergencias";
+}
+
+const pantallaMunicipio = ref<"registrar" | "misEmergencias">("registrar");
 const usuario = ref<Usuario | null>(null);   // null = nadie logueado
 const tareaSeleccionada = ref<Tarea | null>(null);   // tarea que el coordinador eligió en la bandeja
 
@@ -17,19 +53,34 @@ onMounted(async () => {
   try {
     usuario.value = await usuarioActual();
   } catch {
-    usuario.value = null;   // 401 = no hay sesión, se queda en la pantalla de inicio
+    usuario.value = null;   // 401 = no hay sesión, se muestra el login
   }
 });
 
 function alLoguearse(u: Usuario) {
+  mensajeCoordinador.value = "";
+  mensajeMunicipio.value = "";
+  pantallaMunicipio.value = "registrar";
   usuario.value = u;
-  mostrarLogin.value = false;
 }
 
 async function salir() {
-  await logout();
-  usuario.value = null;
-  tareaSeleccionada.value = null;
+  if (cerrandoSesion.value) return;
+  cerrandoSesion.value = true;
+  errorSalir.value = "";
+  try {
+    await logout();
+    modalSalir.value?.close();
+    usuario.value = null;
+    mensajeMunicipio.value = "";
+    mensajeCoordinador.value = "";
+    tareaSeleccionada.value = null;
+    pantallaMunicipio.value = "registrar";
+  } catch (e) {
+    errorSalir.value = e instanceof Error ? e.message : "No se pudo cerrar la sesión. Intentá nuevamente.";
+  } finally {
+    cerrandoSesion.value = false;
+  }
 }
 
 function mostrarRol(rol: Usuario["rol"]) {
@@ -44,32 +95,71 @@ function mostrarRol(rol: Usuario["rol"]) {
 </script>
 
 <template>
-  <!-- Logueado: panel simple. Después se reemplaza por un menú según el rol -->
+  <!-- Panel y navegación según el rol del usuario -->
   <main v-if="usuario" class="panel">
     <header class="panel-header">
+      <div class="inicio-logo panel-logo">
+        <span>RescueSync</span>
+      </div>
+      <nav
+        v-if="usuario.rol === 'OPERADOR_MUNICIPAL' || usuario.rol === 'CCR'"
+        class="panel-nav"
+        aria-label="Navegación principal"
+      >
+        <template v-if="usuario.rol === 'OPERADOR_MUNICIPAL'">
+          <button
+            type="button"
+            class="panel-nav-enlace"
+            :aria-current="pantallaMunicipio === 'registrar' ? 'page' : undefined"
+            @click="cambiarPantallaMunicipio('registrar')"
+          >
+            Registrar Emergencia
+          </button>
+          <button
+            type="button"
+            class="panel-nav-enlace"
+            :aria-current="pantallaMunicipio === 'misEmergencias' ? 'page' : undefined"
+            @click="cambiarPantallaMunicipio('misEmergencias')"
+          >
+            Mis Emergencias
+          </button>
+        </template>
+        <button
+          v-else
+          type="button"
+          class="panel-nav-enlace"
+          :aria-current="!tareaSeleccionada ? 'page' : undefined"
+          @click="tareaSeleccionada = null"
+        >
+          Mis Tareas
+        </button>
+      </nav>
       <div class="panel-header-usuario">
         <span class="panel-header-nombre">{{ usuario.nombre }}</span>
-        <span class="panel-header-rol">{{ mostrarRol(usuario.rol) }}</span>
         <span v-if="usuario.organizacionNombre" class="panel-header-organizacion">
           {{ usuario.organizacionNombre }}
         </span>
+        <span class="panel-header-rol">{{ mostrarRol(usuario.rol) }}</span>
       </div>
-      <button type="button" @click="salir">Cerrar sesión</button>
+      <button type="button" @click="pedirConfirmacionSalir">Cerrar sesión</button>
     </header>
 
-    <!-- Por ahora: el operador municipal ve el alta de emergencia -->
-    <EmergenciaForm v-if="usuario.rol === 'OPERADOR_MUNICIPAL'" />
+    <!-- Municipio: alta y consulta de sus emergencias -->
+    <template v-if="usuario.rol === 'OPERADOR_MUNICIPAL'">
+      <EmergenciaForm v-show="pantallaMunicipio === 'registrar'" @registrada="alRegistrarEmergencia" />
+      <MisEmergencias v-if="pantallaMunicipio === 'misEmergencias'" :mensaje="mensajeMunicipio" />
+    </template>
 
     <!-- Coordinador: su bandeja de tareas (lo que Bonita dice que le toca) -->
     <template v-else-if="usuario.rol === 'CCR'">
-      <BandejaTareas v-if="!tareaSeleccionada" @seleccionar="tareaSeleccionada = $event" />
+      <BandejaTareas v-if="!tareaSeleccionada" :mensaje="mensajeCoordinador" @seleccionar="seleccionarTarea" />
 
       <!-- Cada tarea abre su propio formulario según su nombre -->
       <GenerarLotesForm
         v-else-if="tareaSeleccionada.nombreTarea === 'Generar lotes'"
         :tarea="tareaSeleccionada"
         @volver="tareaSeleccionada = null"
-        @publicado="tareaSeleccionada = null"
+        @publicado="alPublicarLotes"
       />
 
       <!-- Tareas que todavía no tienen pantalla (ej: Evaluar curso alternativo) -->
@@ -81,9 +171,28 @@ function mostrarRol(rol: Usuario["rol"]) {
     </template>
 
     <p v-else>Bienvenido/a. Tu pantalla todavía está en construcción.</p>
+    <dialog
+      ref="modalSalir"
+      class="modal-salir"
+      aria-labelledby="modal-salir-titulo"
+      aria-describedby="modal-salir-descripcion"
+      :aria-busy="cerrandoSesion"
+      @cancel.prevent="cancelarSalida"
+    >
+      <h2 id="modal-salir-titulo">Cerrar sesión</h2>
+      <p id="modal-salir-descripcion">¿Estás seguro de que querés cerrar sesión?</p>
+      <p v-if="errorSalir" class="emergencia-error" role="alert">{{ errorSalir }}</p>
+      <div class="modal-salir-acciones">
+        <button type="button" class="bandeja-actualizar" :disabled="cerrandoSesion" autofocus @click="cancelarSalida">
+          Cancelar
+        </button>
+        <button type="button" class="btn-ingresar" :disabled="cerrandoSesion" @click="salir">
+          {{ cerrandoSesion ? "Cerrando sesión..." : "Cerrar sesión" }}
+        </button>
+      </div>
+    </dialog>
   </main>
 
-  <!-- No logueado: inicio o login -->
-  <PantallaInicio v-else-if="!mostrarLogin" @ingresar="mostrarLogin = true" />
-  <Login v-else @volver="mostrarLogin = false" @logueado="alLoguearse" />
+  <!-- Sin sesión: acceso directo al login -->
+  <Login v-else @logueado="alLoguearse" />
 </template>

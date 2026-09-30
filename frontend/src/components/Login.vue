@@ -3,7 +3,6 @@ import { ref } from "vue";
 import { login, type Usuario } from "../services/authService";
 
 const emit = defineEmits<{
-  volver: [];
   logueado: [usuario: Usuario];   // avisa a App.vue que el login salió bien
 }>();
 
@@ -33,11 +32,22 @@ async function ingresar() {
 <template>
   <main class="pantalla-inicio">
     <section class="inicio-card login-card">
-      <div class="inicio-logo">
-        <h1 class="inicio-titulo">RescueSync</h1>
+      <div class="login-presentacion">
+        <div class="inicio-logo">
+          <h1 class="inicio-titulo">RescueSync</h1>
+        </div>
+        <span class="inicio-etiqueta">RESPUESTA COORDINADA</span>
+        <h2 class="inicio-subtitulo">
+          Coordinación regional de la respuesta ante desastres
+        </h2>
+        <p class="inicio-descripcion">
+          Plataforma para coordinar recursos y organizaciones durante
+          situaciones de emergencia.
+        </p>
       </div>
 
-      <span class="inicio-etiqueta">INGRESAR</span>
+      <div class="login-acceso">
+        <span class="inicio-etiqueta">INGRESAR</span>
 
       <form class="login-form" @submit.prevent="ingresar">
         <label class="login-campo">
@@ -57,9 +67,7 @@ async function ingresar() {
         </button>
       </form>
 
-      <button class="login-volver" type="button" @click="$emit('volver')">
-        Volver al inicio
-      </button>
+      </div>
     </section>
   </main>
 </template>
