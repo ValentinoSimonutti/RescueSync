@@ -91,18 +91,8 @@ public class EmergenciaService {
     }
 
     private EmergenciaDTO convertirADTO(Emergencia emergencia) {
-        EmergenciaDTO dto = new EmergenciaDTO();
+       return EmergenciaDTO.desde(emergencia);
 
-        dto.setId(emergencia.getId());
-        dto.setZonaAfectada(emergencia.getZonaAfectada());
-        dto.setDescripcion(emergencia.getDescripcion());
-        dto.setTipoDesastre(emergencia.getTipoDesastre());
-        dto.setGravedad(emergencia.getGravedad());
-        dto.setBonitaCaseId(emergencia.getBonitaCaseId());
-        dto.setEstado(emergencia.getEstado());
-        dto.setFechaCierreOfertas(emergencia.getFechaCierreOfertas());
-
-        return dto;
     }
 
 }

@@ -3,10 +3,13 @@ import { onMounted, ref } from "vue";
 import PantallaInicio from "./components/PantallaInicio.vue";
 import Login from "./components/Login.vue";
 import EmergenciaForm from "./components/EmergenciaForm.vue";
+import BandejaTareas from "./components/BandejaTareas.vue";
+import type { Tarea } from "./services/tareaService";
 import { logout, usuarioActual, type Usuario } from "./services/authService";
 
 const mostrarLogin = ref(false);
 const usuario = ref<Usuario | null>(null);   // null = nadie logueado
+const tareaSeleccionada = ref<Tarea | null>(null);   // tarea que el coordinador eligió en la bandeja
 
 // Al abrir la página preguntamos a Spring si ya hay una sesión (ej: después de un F5)
 onMounted(async () => {
@@ -25,6 +28,7 @@ function alLoguearse(u: Usuario) {
 async function salir() {
   await logout();
   usuario.value = null;
+  tareaSeleccionada.value = null;
 }
 </script>
 
@@ -40,6 +44,20 @@ async function salir() {
 
     <!-- Por ahora: el operador municipal ve el alta de emergencia -->
     <EmergenciaForm v-if="usuario.rol === 'OPERADOR_MUNICIPAL'" />
+
+    <!-- Coordinador: su bandeja de tareas (lo que Bonita dice que le toca) -->
+    <template v-else-if="usuario.rol === 'CCR'">
+      <BandejaTareas v-if="!tareaSeleccionada" @seleccionar="tareaSeleccionada = $event" />
+
+      <!-- Parte 2: acá va a ir el formulario de "Generar lotes" -->
+      <section v-else class="emergencia-card">
+        <h1 class="emergencia-titulo">{{ tareaSeleccionada.nombreTarea }}</h1>
+        <p>Emergencia #{{ tareaSeleccionada.emergencia.id }} · {{ tareaSeleccionada.emergencia.zonaAfectada }}</p>
+        <p>El formulario de lotes llega en la Parte 2.</p>
+        <button type="button" @click="tareaSeleccionada = null">Volver a la bandeja</button>
+      </section>
+    </template>
+
     <p v-else>Bienvenido/a. Tu pantalla todavía está en construcción.</p>
   </main>
 

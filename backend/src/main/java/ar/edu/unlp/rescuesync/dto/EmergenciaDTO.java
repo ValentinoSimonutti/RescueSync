@@ -1,5 +1,6 @@
 package ar.edu.unlp.rescuesync.dto;
 
+import ar.edu.unlp.rescuesync.entity.Emergencia;
 import ar.edu.unlp.rescuesync.entity.enums.EstadoEmergencia;
 import ar.edu.unlp.rescuesync.entity.enums.Gravedad;
 import ar.edu.unlp.rescuesync.entity.enums.TipoDesastre;
@@ -18,6 +19,21 @@ public class EmergenciaDTO {
     private LocalDateTime fechaCierreOfertas;
 
     public EmergenciaDTO() {
+    }
+
+    // Convierte la entidad (lo que está en la base) en el DTO (lo que viaja al front).
+    // static: se llama sin crear un objeto antes -> EmergenciaDTO.desde(emergencia)
+    public static EmergenciaDTO desde(Emergencia emergencia) {
+        EmergenciaDTO dto = new EmergenciaDTO();
+        dto.setId(emergencia.getId());
+        dto.setZonaAfectada(emergencia.getZonaAfectada());
+        dto.setDescripcion(emergencia.getDescripcion());
+        dto.setTipoDesastre(emergencia.getTipoDesastre());
+        dto.setGravedad(emergencia.getGravedad());
+        dto.setBonitaCaseId(emergencia.getBonitaCaseId());
+        dto.setEstado(emergencia.getEstado());
+        dto.setFechaCierreOfertas(emergencia.getFechaCierreOfertas());
+        return dto;
     }
 
     public Long getId() {
