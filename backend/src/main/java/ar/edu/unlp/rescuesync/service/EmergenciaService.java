@@ -141,14 +141,6 @@ public class EmergenciaService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmergenciaDTO> listarEmergencias() {
-        return emergenciaRepository.findAll()
-                .stream()
-                .map(this::convertirADTO)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
     public List<EmergenciaDTO> listarMisEmergencias(UsuarioLogueado usuario) {
         Long municipioId = usuario.organizacionId();
 
@@ -214,14 +206,6 @@ public class EmergenciaService {
                     return dto;
                 })
                 .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public EmergenciaDTO buscarPorId(Long id) {
-        Emergencia emergencia = emergenciaRepository.findById(id)
-                .orElseThrow();
-
-        return convertirADTO(emergencia);
     }
 
     private EmergenciaDTO convertirADTO(Emergencia emergencia) {

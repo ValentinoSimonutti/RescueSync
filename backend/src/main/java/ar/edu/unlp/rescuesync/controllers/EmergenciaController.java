@@ -60,16 +60,6 @@ public class EmergenciaController {
         return emergenciaService.publicarLotes(id, dto, usuario);
     }
 
-    @GetMapping
-    public List<EmergenciaDTO> listar() {
-        return emergenciaService.listarEmergencias();
-    }
-
-    @GetMapping("/{id}")
-    public EmergenciaDTO buscar(@PathVariable Long id) {
-        return emergenciaService.buscarPorId(id);
-    }
-
     // GET /api/emergencias/mias -> emergencias del municipio logueado
     @GetMapping("/mias")
     public List<EmergenciaDTO> misEmergencias(HttpSession session) {

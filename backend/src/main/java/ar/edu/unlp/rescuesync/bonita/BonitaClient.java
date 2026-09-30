@@ -88,7 +88,7 @@ public class BonitaClient {
     // ---- Postman 2: buscar el proceso -----------------------------------------
     // CAMBIO: ya no se guarda en memoria. Cada deploy nuevo cambia el id,
     // y si lo guardábamos Spring seguía usando uno viejo (404 hasta reiniciar).
-    public long getProcessId(BonitaSession sesion) {
+    private long getProcessId(BonitaSession sesion) {   // solo lo usa instanciar()
 
         List<Map<String, Object>> procesos = llamar("buscar el proceso", () -> http.get()
                 .uri(uriBuilder -> uriBuilder

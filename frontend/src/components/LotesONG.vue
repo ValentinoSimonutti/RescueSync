@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { misTareas } from "../services/tareaService";
 import { lotesDeEmergencia, type Emergencia, type Lote } from "../services/emergenciaService";
+import { ofertar } from "../services/ofertaService";
 
 type Convocatoria = { emergencia: Emergencia; lotes: Lote[]; error: string };
 const convocatorias = ref<Convocatoria[]>([]);
@@ -12,6 +13,48 @@ const ahora = ref(Date.now());
 let activo = true;
 let reloj: ReturnType<typeof setInterval>;
 let refresco: ReturnType<typeof setInterval>;
+
+// --- Ofertas ---
+// Cantidad que la ONG escribe para cada lote (por defecto, lo que pide el lote)
+const cantidades = ref<Record<number, number>>({});
+// Lote que se está enviando (para deshabilitar su botón mientras tanto)
+const enviando = ref<number | null>(null);
+// Mensaje por lote: éxito o error que devuelve el backend
+const mensajes = ref<Record<number, { texto: string; ok: boolean }>>({});
+
+function cantidadDe(lote: Lote) {
+  return cantidades.value[lote.id] ?? lote.cantidad;
+}
+
+function cambiarCantidad(lote: Lote, evento: Event) {
+  cantidades.value[lote.id] = Number((evento.target as HTMLInputElement).value);
+}
+
+// Envía la oferta de un lote. El backend toma la ONG de la sesión y valida
+// que la convocatoria siga abierta y que la cantidad esté entre 1 y lo pedido.
+// No toca Bonita: el timer de la ventana sigue corriendo.
+async function ofrecer(lote: Lote) {
+  const cantidad = cantidadDe(lote);
+
+  if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > lote.cantidad) {
+    mensajes.value[lote.id] = { texto: `La cantidad debe estar entre 1 y ${lote.cantidad}.`, ok: false };
+    return;
+  }
+
+  enviando.value = lote.id;
+  delete mensajes.value[lote.id];
+  try {
+    await ofertar(lote.id, cantidad);
+    mensajes.value[lote.id] = { texto: `Oferta enviada: ${cantidad} · ${lote.recurso}.`, ok: true };
+  } catch (e) {
+    mensajes.value[lote.id] = {
+      texto: e instanceof Error ? e.message : "No se pudo enviar la oferta.",
+      ok: false
+    };
+  } finally {
+    enviando.value = null;
+  }
+}
 
 // El contrato actual usa LocalDateTime de Argentina. Respetar el offset si la API lo incorpora.
 function cierre(emergencia: Emergencia) {
@@ -92,7 +135,6 @@ onUnmounted(() => {
       </div>
       <button type="button" class="bandeja-actualizar" :disabled="actualizando" @click="cargar">Actualizar</button>
     </div>
-    <p class="ong-aviso">La opción de ofrecer ayuda estará disponible próximamente.</p>
     <p v-if="error" class="emergencia-error" role="alert">{{ error }}</p>
     <p v-if="cargando" role="status">Cargando lotes...</p>
     <p v-else-if="!error && vigentes.length === 0" class="bandeja-vacia">No hay convocatorias vigentes disponibles.</p>
@@ -115,7 +157,25 @@ onUnmounted(() => {
         <ul v-else class="ong-lotes">
           <li v-for="lote in convocatoria.lotes" :key="lote.id" class="ong-lote">
             <div><strong>{{ lote.recurso }}</strong><p>Cantidad requerida: {{ lote.cantidad }}</p></div>
-            <button type="button" class="btn-ingresar bandeja-boton" disabled title="Próximamente">Ofrecer ayuda</button>
+            <!-- Oferta: cuánto puede aportar la ONG (parcial permitido) -->
+            <div class="ong-oferta">
+              <div class="ong-oferta-fila">
+                <label class="ong-oferta-campo">
+                  <span>Puedo aportar</span>
+                  <input type="number" min="1" :max="lote.cantidad"
+                         :value="cantidadDe(lote)" @input="cambiarCantidad(lote, $event)"
+                         :disabled="enviando === lote.id" />
+                </label>
+                <button type="button" class="btn-ingresar bandeja-boton"
+                        :disabled="enviando === lote.id" @click="ofrecer(lote)">
+                  {{ enviando === lote.id ? "Enviando..." : "Ofrecer ayuda" }}
+                </button>
+              </div>
+              <p v-if="mensajes[lote.id]" role="status"
+                 :class="mensajes[lote.id].ok ? 'ong-oferta-ok' : 'ong-oferta-error'">
+                {{ mensajes[lote.id].texto }}
+              </p>
+            </div>
           </li>
         </ul>
       </li>

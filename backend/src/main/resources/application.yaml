@@ -20,7 +20,3 @@ bonita:
   url: http://localhost:8080/bonita
   process-name: RescueSync
 
-# viejo
-#autoconfigure:
-#  exclude:
-#    - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration

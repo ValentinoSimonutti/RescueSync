@@ -553,3 +553,15 @@ body:has(.modal-salir[open]) { overflow: hidden; }
 @media (max-width: 600px) {
   .ong-lote { flex-direction: column; align-items: stretch; padding: 18px; }
 }
+
+/* --- oferta de la ONG (LotesONG.vue) --- */
+.ong-oferta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.ong-oferta-fila { display: flex; align-items: flex-end; gap: 12px; }
+.ong-oferta-campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text); }
+.ong-oferta-campo input { width: 110px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+.ong-oferta-ok { color: #2e7d32; font-size: 13px; }
+.ong-oferta-error { color: #c62828; font-size: 13px; }
+@media (max-width: 640px) {
+  .ong-oferta, .ong-oferta-fila { align-items: stretch; }
+  .ong-oferta-campo input { width: 100%; }
+}

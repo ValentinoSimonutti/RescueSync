@@ -6,8 +6,6 @@ import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
-    Optional<Usuario> findByEmail(String email);
-
     // Une los dos mundos: el usuario que se logueó en Bonita -> su perfil en Postgres
     Optional<Usuario> findByBonitaUsername(String bonitaUsername);
 }
