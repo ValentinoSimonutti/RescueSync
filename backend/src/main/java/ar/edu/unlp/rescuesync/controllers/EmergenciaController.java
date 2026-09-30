@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import ar.edu.unlp.rescuesync.dto.NuevaEmergenciaDTO;
 import ar.edu.unlp.rescuesync.dto.EmergenciaDTO;
 import ar.edu.unlp.rescuesync.dto.PublicarLotesDTO;
+import ar.edu.unlp.rescuesync.dto.LoteDTO;
 
 import java.util.List;
 
@@ -82,5 +83,22 @@ public class EmergenciaController {
         }
 
         return emergenciaService.listarMisEmergencias(usuario);
+    }
+
+    @GetMapping("/{id}/lotes")
+    public List<LoteDTO> consultarLotes(
+            @PathVariable("id") Long id,
+            HttpSession session
+    ) {
+        UsuarioLogueado usuario = sesionActual.obtener(session);
+
+        if (usuario.rol() != Rol.REPRESENTANTE_ONG) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Solo una ONG puede consultar las convocatorias disponibles"
+            );
+        }
+
+        return emergenciaService.consultarLotes(id, usuario);
     }
 }

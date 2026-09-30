@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.stereotype.Service;
+import ar.edu.unlp.rescuesync.dto.LoteDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -162,6 +163,56 @@ public class EmergenciaService {
                 .findByMunicipio_IdOrderByIdDesc(municipioId)
                 .stream()
                 .map(this::convertirADTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<LoteDTO> consultarLotes(
+            Long emergenciaId,
+            UsuarioLogueado usuario
+    ) {
+        Emergencia emergencia = emergenciaRepository.findById(emergenciaId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No existe la emergencia"
+                ));
+
+        // La convocatoria debe estar disponible para esta ONG en Bonita.
+        boolean tieneAcceso = bonitaClient.tareasPendientes(usuario.bonita())
+                .stream()
+                .anyMatch(tarea ->
+                        "Cargar o editar ofertas".equals(tarea.get("name"))
+                                && String.valueOf(emergencia.getBonitaCaseId())
+                                .equals(String.valueOf(tarea.get("caseId")))
+                );
+
+        if (!tieneAcceso) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "La convocatoria no está disponible para tu organización"
+            );
+        }
+
+        if (emergencia.getEstado() != EstadoEmergencia.EN_CONVOCATORIA
+                || emergencia.getFechaCierreOfertas() == null
+                || !emergencia.getFechaCierreOfertas()
+                .isAfter(LocalDateTime.now())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "La convocatoria ya no está vigente"
+            );
+        }
+
+        return loteRepository.findByEmergencia_IdOrderByIdAsc(emergenciaId)
+                .stream()
+                .map(lote -> {
+                    LoteDTO dto = new LoteDTO();
+                    dto.setId(lote.getId());
+                    dto.setRecurso(lote.getRecurso());
+                    dto.setCantidad(lote.getCantidad());
+                    dto.setEmergenciaId(emergenciaId);
+                    return dto;
+                })
                 .toList();
     }
 
