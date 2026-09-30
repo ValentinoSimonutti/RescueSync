@@ -14,6 +14,7 @@ export interface Emergencia {
   tipoDesastre: string;
   gravedad: string;
   estado: string;
+  fechaCierreOfertas: string | null;
   bonitaCaseId: number | null;   // case creado en Bonita para esta emergencia
 }
 
@@ -43,4 +44,15 @@ export function publicarLotes(emergenciaId: number, datos: PublicarLotesRequest)
 // El backend filtra por el municipio de la sesión actual.
 export function misEmergencias(): Promise<Emergencia[]> {
   return get<Emergencia[]>("/emergencias/mias");
+}
+
+export interface Lote {
+  id: number;
+  recurso: string;
+  cantidad: number;
+  emergenciaId: number;
+}
+
+export function lotesDeEmergencia(emergenciaId: number): Promise<Lote[]> {
+  return get<Lote[]>(`/emergencias/${emergenciaId}/lotes`);
 }

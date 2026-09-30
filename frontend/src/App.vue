@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import LotesONG from "./components/LotesONG.vue";
 import Login from "./components/Login.vue";
 import EmergenciaForm from "./components/EmergenciaForm.vue";
 import MisEmergencias from "./components/MisEmergencias.vue";
@@ -102,7 +103,7 @@ function mostrarRol(rol: Usuario["rol"]) {
         <span>RescueSync</span>
       </div>
       <nav
-        v-if="usuario.rol === 'OPERADOR_MUNICIPAL' || usuario.rol === 'CCR'"
+        v-if="usuario.rol !== 'AUDITOR'"
         class="panel-nav"
         aria-label="Navegación principal"
       >
@@ -125,7 +126,7 @@ function mostrarRol(rol: Usuario["rol"]) {
           </button>
         </template>
         <button
-          v-else
+          v-else-if="usuario.rol === 'CCR'"
           type="button"
           class="panel-nav-enlace"
           :aria-current="!tareaSeleccionada ? 'page' : undefined"
@@ -133,6 +134,7 @@ function mostrarRol(rol: Usuario["rol"]) {
         >
           Mis Tareas
         </button>
+        <button v-else type="button" class="panel-nav-enlace" aria-current="page">Lotes</button>
       </nav>
       <div class="panel-header-usuario">
         <span class="panel-header-nombre">{{ usuario.nombre }}</span>
@@ -170,6 +172,7 @@ function mostrarRol(rol: Usuario["rol"]) {
       </section>
     </template>
 
+    <LotesONG v-else-if="usuario.rol === 'REPRESENTANTE_ONG'" />
     <p v-else>Bienvenido/a. Tu pantalla todavía está en construcción.</p>
     <dialog
       ref="modalSalir"
