@@ -148,6 +148,24 @@ public class EmergenciaService {
     }
 
     @Transactional(readOnly = true)
+    public List<EmergenciaDTO> listarMisEmergencias(UsuarioLogueado usuario) {
+        Long municipioId = usuario.organizacionId();
+
+        if (municipioId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "El usuario no tiene un municipio asociado"
+            );
+        }
+
+        return emergenciaRepository
+                .findByMunicipio_IdOrderByIdDesc(municipioId)
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public EmergenciaDTO buscarPorId(Long id) {
         Emergencia emergencia = emergenciaRepository.findById(id)
                 .orElseThrow();

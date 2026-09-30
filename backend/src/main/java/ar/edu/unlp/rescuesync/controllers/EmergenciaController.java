@@ -68,4 +68,19 @@ public class EmergenciaController {
     public EmergenciaDTO buscar(@PathVariable Long id) {
         return emergenciaService.buscarPorId(id);
     }
+
+    // GET /api/emergencias/mias -> emergencias del municipio logueado
+    @GetMapping("/mias")
+    public List<EmergenciaDTO> misEmergencias(HttpSession session) {
+        UsuarioLogueado usuario = sesionActual.obtener(session);
+
+        if (usuario.rol() != Rol.OPERADOR_MUNICIPAL) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Solo un operador municipal puede consultar sus emergencias"
+            );
+        }
+
+        return emergenciaService.listarMisEmergencias(usuario);
+    }
 }
