@@ -31,15 +31,29 @@ async function salir() {
   usuario.value = null;
   tareaSeleccionada.value = null;
 }
+
+function mostrarRol(rol: Usuario["rol"]) {
+  if (rol === "CCR") return "Centro Coordinador Regional";
+
+  return rol
+    .toLocaleLowerCase("es")
+    .split("_")
+    .map((palabra) => palabra.charAt(0).toLocaleUpperCase("es") + palabra.slice(1))
+    .join(" ");
+}
 </script>
 
 <template>
   <!-- Logueado: panel simple. Después se reemplaza por un menú según el rol -->
   <main v-if="usuario" class="panel">
     <header class="panel-header">
-      <span>{{ usuario.nombre }} · {{ usuario.rol }}
-        <template v-if="usuario.organizacionNombre"> · {{ usuario.organizacionNombre }}</template>
-      </span>
+      <div class="panel-header-usuario">
+        <span class="panel-header-nombre">{{ usuario.nombre }}</span>
+        <span class="panel-header-rol">{{ mostrarRol(usuario.rol) }}</span>
+        <span v-if="usuario.organizacionNombre" class="panel-header-organizacion">
+          {{ usuario.organizacionNombre }}
+        </span>
+      </div>
       <button type="button" @click="salir">Cerrar sesión</button>
     </header>
 

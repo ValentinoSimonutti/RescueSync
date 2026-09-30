@@ -22,6 +22,12 @@ const duracionMinutos = ref(2);
 const error = ref("");
 const cargando = ref(false);
 
+function capitalizar(valor: string) {
+  return valor
+    .toLocaleLowerCase("es")
+    .replace(/^./u, (letra) => letra.toLocaleUpperCase("es"));
+}
+
 function agregarLote() {
   lotes.value.push({ recurso: "", cantidad: 1 });
 }
@@ -57,14 +63,16 @@ async function publicar() {
 
 <template>
   <section class="emergencia-card">
-    <span class="inicio-etiqueta emergencia-etiqueta">GENERAR LOTES</span>
+    <span class="inicio-etiqueta emergencia-etiqueta lote-etiqueta">Generar lotes</span>
     <h1 class="emergencia-titulo">
-      {{ tarea.emergencia.tipoDesastre }} · {{ tarea.emergencia.zonaAfectada }}
+      {{ capitalizar(tarea.emergencia.tipoDesastre) }} · {{ tarea.emergencia.zonaAfectada }}
     </h1>
-    <p class="bandeja-detalle">
-      Emergencia #{{ tarea.emergencia.id }} · Gravedad {{ tarea.emergencia.gravedad }}
+    <p class="lote-resumen">
+      Emergencia #{{ tarea.emergencia.id }} · Gravedad {{ capitalizar(tarea.emergencia.gravedad) }}
     </p>
-    <p v-if="tarea.emergencia.descripcion">{{ tarea.emergencia.descripcion }}</p>
+    <p v-if="tarea.emergencia.descripcion" class="lote-descripcion">
+      <strong>Descripción:</strong> {{ tarea.emergencia.descripcion }}
+    </p>
 
     <!-- Una fila por lote -->
     <div v-for="(lote, i) in lotes" :key="i" class="lote-fila">
@@ -80,9 +88,9 @@ async function publicar() {
               aria-label="Quitar lote">✕</button>
     </div>
 
-    <button type="button" class="bandeja-actualizar" @click="agregarLote">+ Agregar lote</button>
+    <button type="button" class="bandeja-actualizar lote-agregar" @click="agregarLote">+ Agregar lote</button>
 
-    <div class="emergencia-campo">
+    <div class="emergencia-campo lote-duracion">
       <label for="duracion">Duración de la ventana de ofertas (minutos)</label>
       <input id="duracion" v-model.number="duracionMinutos" type="number" min="1" />
     </div>

@@ -29,8 +29,7 @@ async function registrarEmergencia() {
   try {
     const emergencia = await crearEmergencia(datos);
 
-    // Muestra también el case de Bonita: prueba de que el proceso arrancó
-    mensaje.value = `Emergencia registrada correctamente. ID: ${emergencia.id} · Case en Bonita: ${emergencia.bonitaCaseId}`;
+    mensaje.value = "Emergencia registrada correctamente.";
 
     zonaAfectada.value = "";
     descripcion.value = "";

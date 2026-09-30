@@ -11,6 +11,18 @@ const tareas = ref<Tarea[]>([]);
 const cargando = ref(true);
 const error = ref("");
 
+function mostrarGravedad(gravedad: string) {
+  return gravedad
+    .toLocaleLowerCase("es")
+    .replace(/^./u, (letra) => letra.toLocaleUpperCase("es"));
+}
+
+function mostrarTipoDesastre(tipo: string) {
+  return tipo
+    .toLocaleLowerCase("es")
+    .replace(/^./u, (letra) => letra.toLocaleUpperCase("es"));
+}
+
 // Pide la bandeja a Spring (que a su vez le pregunta a Bonita y a Postgres)
 async function cargar() {
   cargando.value = true;
@@ -47,16 +59,21 @@ onMounted(cargar);
     <!-- Una tarjeta por tarea -->
     <ul v-else class="bandeja-lista">
       <li v-for="tarea in tareas" :key="tarea.tareaId" class="bandeja-item">
-        <div class="bandeja-info">
-          <strong>{{ tarea.nombreTarea }}</strong>
-          <span>{{ tarea.emergencia.tipoDesastre }} · {{ tarea.emergencia.zonaAfectada }}</span>
-          <span class="bandeja-detalle">
-            Gravedad {{ tarea.emergencia.gravedad }} · Emergencia #{{ tarea.emergencia.id }}
-          </span>
+        <div class="bandeja-item-superior">
+          <span class="bandeja-tipo">{{ mostrarTipoDesastre(tarea.emergencia.tipoDesastre) }}</span>
+          <span class="bandeja-separador" aria-hidden="true">·</span>
+          <span class="bandeja-zona">{{ tarea.emergencia.zonaAfectada }}</span>
+          <strong v-if="tarea.nombreTarea !== 'Generar lotes'">{{ tarea.nombreTarea }}</strong>
         </div>
-        <button type="button" class="btn-ingresar bandeja-boton" @click="$emit('seleccionar', tarea)">
-          Resolver
-        </button>
+        <div class="bandeja-item-inferior">
+          <span class="bandeja-detalle">
+            <span class="bandeja-gravedad">Gravedad {{ mostrarGravedad(tarea.emergencia.gravedad) }}</span>
+            <span>· Emergencia #{{ tarea.emergencia.id }}</span>
+          </span>
+          <button type="button" class="btn-ingresar bandeja-boton" @click="$emit('seleccionar', tarea)">
+            {{ tarea.nombreTarea === "Generar lotes" ? "Generar lote" : "Resolver" }}
+          </button>
+        </div>
       </li>
     </ul>
   </section>
