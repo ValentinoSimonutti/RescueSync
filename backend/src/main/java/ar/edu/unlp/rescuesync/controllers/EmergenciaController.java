@@ -4,6 +4,8 @@ import ar.edu.unlp.rescuesync.auth.Rol;
 import ar.edu.unlp.rescuesync.auth.SesionActual;
 import ar.edu.unlp.rescuesync.auth.UsuarioLogueado;
 import ar.edu.unlp.rescuesync.service.EmergenciaService;
+import ar.edu.unlp.rescuesync.service.OfertaService;
+import ar.edu.unlp.rescuesync.dto.CoberturaDTO;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,11 +22,36 @@ import java.util.List;
 public class EmergenciaController {
 
     private final EmergenciaService emergenciaService;
-    private final SesionActual sesionActual;       // NUEVO: para saber quién está logueado
+    private final OfertaService ofertaService;     // para la cobertura de las convocatorias
+    private final SesionActual sesionActual;       // para saber quién está logueado
 
-    public EmergenciaController(EmergenciaService emergenciaService, SesionActual sesionActual) {
+    public EmergenciaController(EmergenciaService emergenciaService, OfertaService ofertaService,
+                                SesionActual sesionActual) {
         this.emergenciaService = emergenciaService;
+        this.ofertaService = ofertaService;
         this.sesionActual = sesionActual;
+    }
+
+    // GET /api/emergencias/convocatorias -> convocatorias abiertas (coordinador)
+    @GetMapping("/convocatorias")
+    public List<EmergenciaDTO> convocatorias(HttpSession session) {
+        UsuarioLogueado usuario = sesionActual.obtener(session);
+        if (usuario.rol() != Rol.CCR) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Solo el centro coordinador puede ver las convocatorias");
+        }
+        return emergenciaService.listarConvocatoriasAbiertas();
+    }
+
+    // GET /api/emergencias/{id}/cobertura -> cuánto se ofreció por lote
+    // Coordinador: para seguir la convocatoria. ONG: para ver cuánto falta y colaborar.
+    @GetMapping("/{id}/cobertura")
+    public CoberturaDTO cobertura(@PathVariable Long id, HttpSession session) {
+        UsuarioLogueado usuario = sesionActual.obtener(session);
+        if (usuario.rol() != Rol.CCR && usuario.rol() != Rol.REPRESENTANTE_ONG) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No podés ver la cobertura");
+        }
+        return ofertaService.cobertura(id);
     }
 
     @PostMapping

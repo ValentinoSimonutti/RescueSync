@@ -44,4 +44,4 @@ public class NuevaEmergenciaDTO {
     public void setGravedad(Gravedad gravedad) {
         this.gravedad = gravedad;
     }
-}
+}

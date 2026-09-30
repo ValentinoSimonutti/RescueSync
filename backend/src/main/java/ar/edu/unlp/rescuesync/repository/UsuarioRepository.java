@@ -8,4 +8,4 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     // Une los dos mundos: el usuario que se logueó en Bonita -> su perfil en Postgres
     Optional<Usuario> findByBonitaUsername(String bonitaUsername);
-}
+}

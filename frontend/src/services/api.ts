@@ -46,3 +46,7 @@ export function get<T>(endpoint: string): Promise<T> {
 export function post<T>(endpoint: string, datos?: unknown): Promise<T> {
     return request<T>("POST", endpoint, datos);
 }
+
+export function put<T>(endpoint: string, datos?: unknown): Promise<T> {
+    return request<T>("PUT", endpoint, datos);
+}

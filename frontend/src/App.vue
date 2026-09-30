@@ -6,6 +6,7 @@ import EmergenciaForm from "./components/EmergenciaForm.vue";
 import MisEmergencias from "./components/MisEmergencias.vue";
 import BandejaTareas from "./components/BandejaTareas.vue";
 import GenerarLotesForm from "./components/GenerarLotesForm.vue";
+import ConvocatoriasCCR from "./components/ConvocatoriasCCR.vue";
 import type { Tarea } from "./services/tareaService";
 import { logout, usuarioActual, type Usuario } from "./services/authService";
 
@@ -35,6 +36,15 @@ function seleccionarTarea(tarea: Tarea) {
   tareaSeleccionada.value = tarea;
 }
 
+// Coordinador: bandeja de tareas o seguimiento de convocatorias (cobertura de ofertas)
+const pantallaCoordinador = ref<"tareas" | "convocatorias">("tareas");
+
+function cambiarPantallaCoordinador(pantalla: "tareas" | "convocatorias") {
+  mensajeCoordinador.value = "";
+  tareaSeleccionada.value = null;
+  pantallaCoordinador.value = pantalla;
+}
+
 function cambiarPantallaMunicipio(pantalla: "registrar" | "misEmergencias") {
   mensajeMunicipio.value = "";
   pantallaMunicipio.value = pantalla;
@@ -62,6 +72,8 @@ function alLoguearse(u: Usuario) {
   mensajeCoordinador.value = "";
   mensajeMunicipio.value = "";
   pantallaMunicipio.value = "registrar";
+  pantallaCoordinador.value = "tareas";
+  tareaSeleccionada.value = null;
   usuario.value = u;
 }
 
@@ -77,6 +89,7 @@ async function salir() {
     mensajeCoordinador.value = "";
     tareaSeleccionada.value = null;
     pantallaMunicipio.value = "registrar";
+    pantallaCoordinador.value = "tareas";
   } catch (e) {
     errorSalir.value = e instanceof Error ? e.message : "No se pudo cerrar la sesión. Intentá nuevamente.";
   } finally {
@@ -125,15 +138,24 @@ function mostrarRol(rol: Usuario["rol"]) {
             Mis Emergencias
           </button>
         </template>
-        <button
-          v-else-if="usuario.rol === 'CCR'"
-          type="button"
-          class="panel-nav-enlace"
-          :aria-current="!tareaSeleccionada ? 'page' : undefined"
-          @click="tareaSeleccionada = null"
-        >
-          Mis Tareas
-        </button>
+        <template v-else-if="usuario.rol === 'CCR'">
+          <button
+            type="button"
+            class="panel-nav-enlace"
+            :aria-current="pantallaCoordinador === 'tareas' && !tareaSeleccionada ? 'page' : undefined"
+            @click="cambiarPantallaCoordinador('tareas')"
+          >
+            Mis Tareas
+          </button>
+          <button
+            type="button"
+            class="panel-nav-enlace"
+            :aria-current="pantallaCoordinador === 'convocatorias' ? 'page' : undefined"
+            @click="cambiarPantallaCoordinador('convocatorias')"
+          >
+            Convocatorias
+          </button>
+        </template>
         <button v-else type="button" class="panel-nav-enlace" aria-current="page">Lotes</button>
       </nav>
       <div class="panel-header-usuario">
@@ -154,7 +176,10 @@ function mostrarRol(rol: Usuario["rol"]) {
 
     <!-- Coordinador: su bandeja de tareas (lo que Bonita dice que le toca) -->
     <template v-else-if="usuario.rol === 'CCR'">
-      <BandejaTareas v-if="!tareaSeleccionada" :mensaje="mensajeCoordinador" @seleccionar="seleccionarTarea" />
+      <!-- Seguimiento: cobertura de las ofertas de cada convocatoria abierta -->
+      <ConvocatoriasCCR v-if="pantallaCoordinador === 'convocatorias'" />
+
+      <BandejaTareas v-else-if="!tareaSeleccionada" :mensaje="mensajeCoordinador" @seleccionar="seleccionarTarea" />
 
       <!-- Cada tarea abre su propio formulario según su nombre -->
       <GenerarLotesForm

@@ -140,6 +140,28 @@ public class EmergenciaService {
         return convertirADTO(emergencia);
     }
 
+    // Convocatorias abiertas (EN_CONVOCATORIA), la que cierra primero arriba
+    @Transactional(readOnly = true)
+    public List<EmergenciaDTO> listarConvocatoriasAbiertas() {
+        return emergenciaRepository
+                .findByEstadoOrderByFechaCierreOfertasAsc(EstadoEmergencia.EN_CONVOCATORIA)
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
+    }
+
+    // Cuando Bonita pide el consolidado (venció el timer), la emergencia pasa a EN_EVALUACION
+    @Transactional
+    public void marcarEnEvaluacionSiCerro(Long emergenciaId) {
+        emergenciaRepository.findById(emergenciaId).ifPresent(e -> {
+            if (e.getEstado() == EstadoEmergencia.EN_CONVOCATORIA
+                    && e.getFechaCierreOfertas() != null
+                    && !LocalDateTime.now().isBefore(e.getFechaCierreOfertas())) {
+                e.setEstado(EstadoEmergencia.EN_EVALUACION);
+            }
+        });
+    }
+
     @Transactional(readOnly = true)
     public List<EmergenciaDTO> listarMisEmergencias(UsuarioLogueado usuario) {
         Long municipioId = usuario.organizacionId();

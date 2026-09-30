@@ -19,4 +19,6 @@ server:
 bonita:
   url: http://localhost:8080/bonita
   process-name: RescueSync
+  # Clave que manda Bonita (header X-Api-Key) al pedir las ofertas cuando vence el timer
+  integration-key: rescuesync-bonita-2026
 

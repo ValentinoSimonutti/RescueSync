@@ -41,4 +41,4 @@ public class LoteDTO {
     public void setEmergenciaId(Long emergenciaId) {
         this.emergenciaId = emergenciaId;
     }
-}
+}

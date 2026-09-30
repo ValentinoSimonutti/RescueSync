@@ -1,53 +1,48 @@
 package ar.edu.unlp.rescuesync.dto;
 
-public class OfertaDTO {
+import ar.edu.unlp.rescuesync.entity.Oferta;
 
-    private Long id;
-    private int cantidad;
-    private String recurso;
-    private Long ongId;
-    private Long loteId;
+import java.time.LocalDateTime;
+import java.util.List;
 
-    public OfertaDTO() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public int getCantidad() {
-        return cantidad;
-    }
-
-    public void setCantidad(int cantidad) {
-        this.cantidad = cantidad;
-    }
-
-    public String getRecurso() {
-        return recurso;
-    }
-
-    public void setRecurso(String recurso) {
-        this.recurso = recurso;
-    }
-
-    public Long getOngId() {
-        return ongId;
-    }
-
-    public void setOngId(Long ongId) {
-        this.ongId = ongId;
-    }
-
-    public Long getLoteId() {
-        return loteId;
-    }
-
-    public void setLoteId(Long loteId) {
-        this.loteId = loteId;
+// Una oferta vista desde afuera.
+// soyLider / miAporte se calculan para la ONG que consulta (null si consulta el coordinador o Bonita).
+public record OfertaDTO(
+        Long id,
+        Long loteId,
+        Long emergenciaId,
+        String recurso,
+        int cantidadRequerida,      // lo que pide el lote
+        int total,                  // suma de aportes confirmados
+        String estado,
+        int version,
+        boolean consorcio,
+        Long liderId,
+        String liderNombre,
+        LocalDateTime fechaActualizacion,
+        List<AporteDTO> aportes,
+        Boolean soyLider,
+        AporteDTO miAporte
+) {
+    // ongId = ONG que consulta (null = coordinador / Bonita)
+    public static OfertaDTO desde(Oferta o, Long ongId) {
+        AporteDTO mio = ongId == null ? null : o.aporteDe(ongId).map(AporteDTO::desde).orElse(null);
+        return new OfertaDTO(
+                o.getId(),
+                o.getLote().getId(),
+                o.getLote().getEmergencia().getId(),
+                o.getRecurso(),
+                o.getLote().getCantidad(),
+                o.getCantidad(),
+                o.getEstado().name(),
+                o.getNumeroVersion() == null ? 0 : o.getNumeroVersion(),
+                o.esConsorcio(),
+                o.getOng().getId(),
+                o.getOng().getNombre(),
+                o.getFechaActualizacion(),
+                o.getAportes().stream().map(AporteDTO::desde).toList(),
+                ongId == null ? null : o.esLider(ongId),
+                mio
+        );
     }
 }

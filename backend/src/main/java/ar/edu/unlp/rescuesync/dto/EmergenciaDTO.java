@@ -99,4 +99,4 @@ public class EmergenciaDTO {
     public void setFechaCierreOfertas(LocalDateTime fechaCierreOfertas) {
         this.fechaCierreOfertas = fechaCierreOfertas;
     }
-}
+}
