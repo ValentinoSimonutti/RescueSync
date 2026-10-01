@@ -7,6 +7,8 @@ import { publicarLotes, type NuevoLote } from "../services/emergenciaService";
 // La tarea que se eligió en la bandeja (trae la emergencia adentro)
 const props = defineProps<{
   tarea: Tarea;
+  lotesIniciales?: NuevoLote[];
+  reapertura?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -15,7 +17,7 @@ const emit = defineEmits<{
 }>();
 
 // Lista de lotes que el coordinador va armando. Arranca con una fila vacía.
-const lotes = ref<NuevoLote[]>([{ recurso: "", cantidad: 1 }]);
+const lotes = ref<NuevoLote[]>(props.lotesIniciales?.map(lote => ({ ...lote })) ?? [{ recurso: "", cantidad: 1 }]);
 
 // Duración de la ventana de ofertas en minutos (2 para probar rápido el timer)
 const duracionMinutos = ref(2);
@@ -28,7 +30,7 @@ const confirmacion = ref<HTMLDialogElement | null>(null);
 const cantidadValida = (valor: number) => Number.isSafeInteger(valor) && valor > 0;
 const erroresLotes = computed(() => lotes.value.map(lote => ({
   recurso: lote.recurso.trim() ? "" : "Ingresá el recurso necesario.",
-  cantidad: cantidadValida(lote.cantidad) ? "" : "Ingresá una cantidad entera mayor a 0."
+  cantidad: cantidadValida(lote.cantidad) && lote.cantidad <= 100 ? "" : "Ingresá una cantidad entera entre 1 y 100."
 })));
 const errorDuracion = computed(() => cantidadValida(duracionMinutos.value) ? "" : "Ingresá una duración entera de al menos 1 minuto.");
 
@@ -56,6 +58,14 @@ function capitalizar(valor: string) {
     .replace(/^./u, (letra) => letra.toLocaleUpperCase("es"));
 }
 
+function limitarCantidad(evento: Event, lote: NuevoLote) {
+  const campo = evento.target as HTMLInputElement;
+  if (campo.valueAsNumber > 100) {
+    campo.value = "100";
+    lote.cantidad = 100;
+  }
+}
+
 function agregarLote() {
   lotes.value.push({ recurso: "", cantidad: 1 });
 }
@@ -65,7 +75,7 @@ function quitarLote(indice: number) {
 }
 
 async function publicar() {
-  if (cargando.value || !validar()) return;
+  if (props.reapertura || cargando.value || !validar()) return;
   error.value = "";
 
   cargando.value = true;
@@ -87,7 +97,7 @@ async function publicar() {
 
 <template>
   <section ref="formulario" class="emergencia-card generar-lotes">
-    <span class="inicio-etiqueta emergencia-etiqueta lote-etiqueta">Generar lotes</span>
+    <span class="inicio-etiqueta emergencia-etiqueta lote-etiqueta">{{ reapertura ? "Reabrir convocatoria" : "Generar lotes" }}</span>
     <h1 class="emergencia-titulo">
       {{ capitalizar(tarea.emergencia.tipoDesastre) }} · {{ tarea.emergencia.zonaAfectada }}
     </h1>
@@ -98,6 +108,7 @@ async function publicar() {
       <strong>Descripción:</strong> {{ tarea.emergencia.descripcion }}
     </p>
 
+    <p v-if="reapertura" class="ong-ayuda">Revisá las necesidades anteriores y ajustá las cantidades y el nuevo plazo de ofertas.</p>
     <p class="lotes-requeridos">Todos los campos son obligatorios.</p>
 
     <!-- Una fila por lote -->
@@ -111,7 +122,8 @@ async function publicar() {
       </div>
       <div class="emergencia-campo lote-cantidad">
         <label :for="`cantidad-${i}`">Cantidad</label>
-        <input :id="`cantidad-${i}`" v-model.number="lote.cantidad" type="number" min="1" step="1" required
+        <input :id="`cantidad-${i}`" v-model.number="lote.cantidad" type="number" min="1" max="100" step="1" required
+          @input="limitarCantidad($event, lote)"
           :aria-invalid="intentoPublicar && !!erroresLotes[i]?.cantidad"
           :aria-describedby="intentoPublicar && erroresLotes[i]?.cantidad ? `error-cantidad-${i}` : undefined" />
         <p v-if="intentoPublicar && erroresLotes[i]?.cantidad" :id="`error-cantidad-${i}`" class="campo-error">{{ erroresLotes[i]?.cantidad }}</p>
@@ -135,7 +147,7 @@ async function publicar() {
     <div class="lote-acciones">
       <button type="button" class="bandeja-actualizar" @click="emit('volver')">Volver</button>
       <button type="button" class="btn-ingresar emergencia-submit" @click="revisar" :disabled="cargando">
-        {{ cargando ? "Publicando..." : "Publicar convocatoria" }}
+        {{ cargando ? "Publicando..." : reapertura ? "Revisar reapertura" : "Publicar convocatoria" }}
       </button>
     </div>
     <dialog ref="confirmacion" class="modal-salir modal-emergencia"
@@ -161,10 +173,11 @@ async function publicar() {
           <dd>{{ duracionMinutos }} {{ duracionMinutos === 1 ? 'minuto' : 'minutos' }}</dd>
         </div>
       </dl>
+      <p v-if="reapertura" class="ong-ayuda">La reapertura todavía no está habilitada. No se enviaron cambios.</p>
       <p v-if="error" class="emergencia-error" role="alert">{{ error }}</p>
       <div class="modal-salir-acciones">
         <button type="button" class="bandeja-actualizar" :disabled="cargando" autofocus @click="editar">Editar</button>
-        <button type="button" class="btn-ingresar" :disabled="cargando" @click="publicar">
+        <button type="button" class="btn-ingresar" :disabled="cargando || reapertura" @click="publicar">
           {{ cargando ? "Publicando..." : "Confirmar" }}
         </button>
       </div>
