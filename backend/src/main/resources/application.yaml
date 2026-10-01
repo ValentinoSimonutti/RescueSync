@@ -12,6 +12,10 @@ spring:
       ddl-auto: update
     show-sql: true
 
+  logging:
+    level:
+      org.springframework.web: DEBUG
+
 server:
   port: 8081
   error:
