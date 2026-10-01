@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { login, type Usuario } from "../services/authService";
+import { ApiError } from "../services/api";
 
 const emit = defineEmits<{
   logueado: [usuario: Usuario];   // avisa a App.vue que el login salió bien
@@ -21,8 +22,9 @@ async function ingresar() {
     const usuario = await login(username.value, password.value);
     emit("logueado", usuario);
   } catch (e) {
-    // El mensaje viene del backend (ej: "Usuario o contraseña inválidos en Bonita")
-    error.value = e instanceof Error ? e.message : "No se pudo iniciar sesión";
+    error.value = e instanceof ApiError && e.status === 401
+      ? "Usuario o contraseña inválidos"
+      : e instanceof Error ? e.message : "No se pudo iniciar sesión";
   } finally {
     cargando.value = false;
   }

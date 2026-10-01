@@ -26,7 +26,7 @@ const vigentes = computed(() => convocatorias.value.filter(c => {
   return !Number.isFinite(fin) || fin > ahora.value;
 }));
 
-// La oferta de esta ONG para un lote (una ONG participa en una sola oferta activa por lote)
+// Una oferta activa por ONG y lote; en otra cantidad/lote puede ofertar por separado.
 function ofertaDe(lote: Lote) {
   return ofertas.value.find(o => o.loteId === lote.id);
 }

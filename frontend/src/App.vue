@@ -209,7 +209,9 @@ function mostrarRol(rol: Usuario["rol"]) {
     </template>
 
     <LotesONG v-else-if="usuario.rol === 'REPRESENTANTE_ONG'" />
-    <p v-else>Bienvenido/a. Tu pantalla todavía está en construcción.</p>
+    <section v-else class="emergencia-card">
+      <p>Bienvenido/a. Tu pantalla todavía está en construcción.</p>
+    </section>
     <dialog
       ref="modalSalir"
       class="modal-salir"
