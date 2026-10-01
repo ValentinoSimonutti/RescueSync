@@ -62,7 +62,18 @@ public class OfertaService {
         validarVentanaAbierta(lote.getEmergencia());
         validarCantidad(dto.getCantidad(), lote.getCantidad());
 
-        // Una ONG participa en UNA sola oferta por lote: si ya está, que edite esa
+        List<Long> invitadasSolicitadas = Optional.ofNullable(dto.getOngsInvitadas()).orElse(List.of());
+        boolean esConsorcio = invitadasSolicitadas.stream()
+                .filter(Objects::nonNull)
+                .anyMatch(id -> !id.equals(ong.getId()));
+
+        if (esConsorcio && dto.getCantidad() >= lote.getCantidad()) {
+            throw error(HttpStatus.BAD_REQUEST,
+                    "En un consorcio la líder puede aportar hasta " + (lote.getCantidad() - 1)
+                            + " para dejar recursos a las ONGs invitadas.");
+        }
+
+        // Una ONG solo puede participar en una oferta activa para este lote.
         if (participaEnLote(ong.getId(), lote.getId())) {
             throw error(HttpStatus.CONFLICT,
                     "Ya participás en una oferta para este lote. Modificala en lugar de crear otra.");
@@ -74,7 +85,7 @@ public class OfertaService {
 
         // Consorcio: las ONGs invitadas entran como PENDIENTES (todavía no suman)
         List<String> invitadas = new ArrayList<>();
-        for (Long invitadaId : Optional.ofNullable(dto.getOngsInvitadas()).orElse(List.of())) {
+        for (Long invitadaId : invitadasSolicitadas) {
             if (invitadaId == null || invitadaId.equals(ong.getId())) continue;
             ONG invitada = ongRepository.findById(invitadaId)
                     .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "No existe la ONG " + invitadaId));
