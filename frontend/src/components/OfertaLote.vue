@@ -25,6 +25,8 @@ const invitadas = ref<number[]>([]);
 const enviando = ref(false);
 const mensaje = ref<{ texto: string; ok: boolean } | null>(null);
 const verHistorial = ref(false);
+const editandoAporte = ref(false);
+const modalRetiro = ref<HTMLDialogElement | null>(null);
 
 // En qué situación está la ONG con este lote
 const situacion = computed<"libre" | "invitada" | "participa">(() => {
@@ -59,6 +61,7 @@ function reiniciarCantidad() {
 reiniciarCantidad();
 // Solo se reinicia si cambió la oferta (no en cada refresco automático, para no pisar lo que escribe)
 watch(() => [props.oferta?.id, props.oferta?.version, props.oferta?.miAporte?.estado], reiniciarCantidad);
+watch(() => [props.oferta?.id, props.oferta?.version], () => { editandoAporte.value = false; });
 
 function cantidadValida(max: number) {
   if (!Number.isInteger(cantidad.value) || cantidad.value < 1 || cantidad.value > max) {
@@ -69,15 +72,17 @@ function cantidadValida(max: number) {
 }
 
 // Ejecuta una acción contra el backend y muestra el resultado
-async function ejecutar(accion: () => Promise<unknown>, exito: string) {
+async function ejecutar(accion: () => Promise<unknown>, exito: string): Promise<boolean> {
   enviando.value = true;
   mensaje.value = null;
   try {
     await accion();
-    mensaje.value = { texto: exito, ok: true };
+    mensaje.value = exito ? { texto: exito, ok: true } : null;
     emit("cambio");
+    return true;
   } catch (e) {
     mensaje.value = { texto: e instanceof Error ? e.message : "No se pudo completar la acción.", ok: false };
+    return false;
   } finally {
     enviando.value = false;
   }
@@ -98,16 +103,27 @@ function guardarAporte() {
   void ejecutar(
     () => actualizarAporte(props.oferta!.id, cantidad.value),
     eraInvitacion ? "Te sumaste al consorcio." : "Aporte actualizado (nueva versión)."
-  );
+  ).then(ok => { if (ok && !props.oferta?.consorcio) editandoAporte.value = false; });
 }
 
+function cancelarEdicion() {
+  reiniciarCantidad();
+  editandoAporte.value = false;
+}
+
+const textoConfirmacionRetiro = computed(() => props.oferta?.soyLider
+  ? "¿Retirar la oferta? Si es un consorcio, se retira para todas las ONGs."
+  : situacion.value === "invitada" ? "¿Rechazar la invitación?" : "¿Salir del consorcio?");
+
 function retirarme() {
+  if (!props.oferta || enviando.value) return;
+  modalRetiro.value?.showModal();
+}
+
+async function confirmarRetiro() {
   if (!props.oferta) return;
-  const texto = props.oferta.soyLider
-    ? "¿Retirar la oferta? Si es un consorcio, se retira para todas las ONGs."
-    : situacion.value === "invitada" ? "¿Rechazar la invitación?" : "¿Salir del consorcio?";
-  if (!window.confirm(texto)) return;
-  void ejecutar(() => retirarOferta(props.oferta!.id), "Listo.");
+  const ok = await ejecutar(() => retirarOferta(props.oferta!.id), "");
+  if (ok) modalRetiro.value?.close();
 }
 </script>
 
@@ -179,14 +195,24 @@ function retirarme() {
       <div class="ong-oferta-fila">
         <label class="ong-oferta-campo">
           <span>Mi aporte</span>
-          <input v-model.number="cantidad" type="number" min="1" :max="maximo" :disabled="enviando" />
+          <input v-model.number="cantidad" type="number" min="1" :max="maximo" :disabled="enviando || (!oferta.consorcio && !editandoAporte)" />
         </label>
-        <button type="button" class="btn-ingresar bandeja-boton" :disabled="enviando" @click="guardarAporte">
-          Guardar cambios
-        </button>
-        <button type="button" class="bandeja-actualizar" :disabled="enviando" @click="retirarme">
-          {{ oferta.soyLider ? "Retirar oferta" : "Salir del consorcio" }}
-        </button>
+        <template v-if="!oferta.consorcio">
+          <template v-if="editandoAporte">
+            <button type="button" class="btn-ingresar bandeja-boton ong-guardar-cambios" :disabled="enviando" @click="guardarAporte">Guardar cambios</button>
+            <button type="button" class="bandeja-actualizar" :disabled="enviando" @click="cancelarEdicion">Cancelar</button>
+          </template>
+          <template v-else>
+            <button type="button" class="btn-ingresar bandeja-boton" :disabled="enviando" @click="editandoAporte = true">Editar</button>
+            <button type="button" class="bandeja-actualizar" :disabled="enviando" @click="retirarme">Retirar oferta</button>
+          </template>
+        </template>
+        <template v-else>
+          <button type="button" class="btn-ingresar bandeja-boton ong-guardar-cambios" :disabled="enviando" @click="guardarAporte">Guardar cambios</button>
+          <button type="button" class="bandeja-actualizar" :disabled="enviando" @click="retirarme">
+            {{ oferta.soyLider ? "Retirar oferta" : "Salir del consorcio" }}
+          </button>
+        </template>
       </div>
       <button type="button" class="enlace-boton" @click="verHistorial = !verHistorial">
         {{ verHistorial ? "Ocultar historial" : "Ver historial de cambios" }}
@@ -195,5 +221,22 @@ function retirarme() {
     </div>
 
     <p v-if="mensaje" role="status" :class="mensaje.ok ? 'ong-oferta-ok' : 'ong-oferta-error'">{{ mensaje.texto }}</p>
+    <dialog
+      ref="modalRetiro"
+      class="modal-salir"
+      aria-labelledby="modal-retiro-titulo"
+      aria-describedby="modal-retiro-descripcion"
+      :aria-busy="enviando"
+      @cancel.prevent="!enviando && modalRetiro?.close()"
+    >
+      <h2 id="modal-retiro-titulo">Confirmar acción</h2>
+      <p id="modal-retiro-descripcion">{{ textoConfirmacionRetiro }}</p>
+      <div class="modal-salir-acciones">
+        <button type="button" class="bandeja-actualizar" :disabled="enviando" autofocus @click="modalRetiro?.close()">Cancelar</button>
+        <button type="button" class="btn-ingresar" :disabled="enviando" @click="confirmarRetiro">
+          {{ enviando ? "Procesando..." : "Confirmar" }}
+        </button>
+      </div>
+    </dialog>
   </li>
 </template>

@@ -568,10 +568,12 @@ body:has(.modal-salir[open]) { overflow: hidden; }
 .ong-oferta { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; background: var(--surface-soft); border: 1px solid var(--border); border-radius: 12px; }
 .ong-oferta-fila { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; }
 .ong-oferta-campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text); }
-.ong-oferta-campo input { width: 110px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: var(--surface); }
+.ong-oferta-campo input { width: 110px; height: 40px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: inherit; background: var(--surface); }
 .ong-oferta-titulo { color: var(--text-h) !important; font-weight: 600; font-size: 14px !important; }
 .ong-invitacion { border-color: var(--accent); background: var(--accent-bg); }
 .ong-mi-oferta { border-left: 4px solid var(--accent); }
+.ong-mi-oferta .ong-oferta-fila > button { box-sizing: border-box; flex: 0 0 148px; width: 148px; min-width: 148px; min-height: 40px; margin: 0; padding: 8px 12px; font-size: 14px; line-height: 1.4; white-space: nowrap; }
+.ong-oferta-fila > button { height: 40px; min-height: 40px; padding: 8px 12px; }
 
 .ong-consorcio summary { cursor: pointer; color: var(--accent); font-size: 13px; font-weight: 600; }
 .ong-consorcio[open] summary { margin-bottom: 8px; }
@@ -603,6 +605,7 @@ body:has(.modal-salir[open]) { overflow: hidden; }
 
 @media (max-width: 640px) {
   .ong-lote-cabecera { flex-direction: column; align-items: stretch; }
+  .ong-mi-oferta .ong-oferta-fila > button { flex: 1 1 0; width: 0; min-width: 0; }
   .cobertura-mini { align-items: stretch; min-width: 0; }
   .cobertura-barra { width: 100%; }
   .ong-oferta-fila { flex-direction: column; align-items: stretch; }
