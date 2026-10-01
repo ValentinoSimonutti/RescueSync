@@ -144,7 +144,13 @@ public class EmergenciaService {
     @Transactional(readOnly = true)
     public List<EmergenciaDTO> listarConvocatoriasAbiertas() {
         return emergenciaRepository
-                .findByEstadoOrderByFechaCierreOfertasAsc(EstadoEmergencia.EN_CONVOCATORIA)
+                .findByEstadoInOrderByIdDesc(List.of(
+                        EstadoEmergencia.EN_CONVOCATORIA,
+                        EstadoEmergencia.EN_EVALUACION,
+                        EstadoEmergencia.ADJUDICADA,
+                        EstadoEmergencia.EN_EJECUCION,
+                        EstadoEmergencia.CERRADA
+                ))
                 .stream()
                 .map(this::convertirADTO)
                 .toList();

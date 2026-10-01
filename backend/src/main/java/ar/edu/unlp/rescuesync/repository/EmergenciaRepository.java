@@ -15,4 +15,6 @@ public interface EmergenciaRepository extends JpaRepository<Emergencia,Long> {
 
     // Convocatorias abiertas para el coordinador
     List<Emergencia> findByEstadoOrderByFechaCierreOfertasAsc(EstadoEmergencia estado);
+
+    List<Emergencia> findByEstadoInOrderByIdDesc(List<EstadoEmergencia> estados);
 }
