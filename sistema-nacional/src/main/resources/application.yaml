@@ -1,0 +1,42 @@
+# Todo lo que cambia entre local y la nube (Render + Neon) se lee de variables de entorno.
+# Los valores después de ":" son los defaults para correr local con el docker-compose.
+spring:
+  application:
+    name: sistema-nacional
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5434/sistemanacional}
+    username: ${DB_USER:sistemanacional}
+    password: ${DB_PASSWORD:sistemanacional}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: ${SHOW_SQL:false}
+    open-in-view: false
+
+server:
+  port: ${PORT:8090}   # Render inyecta PORT
+  error:
+    include-message: always
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+jwt:
+  # En la nube se define JWT_SECRET (mínimo 32 caracteres). El default es solo para desarrollo.
+  secret: ${JWT_SECRET:clave-de-desarrollo-sistema-nacional-no-usar-en-produccion}
+  expiracion-minutos: ${JWT_EXPIRACION_MINUTOS:120}
+
+# Contraseñas de los usuarios que crea el DataLoader (solo la primera vez, con la base vacía)
+seed:
+  admin-password: ${SEED_ADMIN_PASSWORD:admin123}
+  sistema-password: ${SEED_SISTEMA_PASSWORD:bonita123}
+  ong-password: ${SEED_ONG_PASSWORD:ong123}

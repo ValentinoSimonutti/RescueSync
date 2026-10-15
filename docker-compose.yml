@@ -15,5 +15,22 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # Base del Sistema Nacional (API externa). Separada de la local: son sistemas distintos.
+  postgres-nacional:
+    image: postgres:17
+    container_name: sistemanacional-postgres
+
+    environment:
+      POSTGRES_DB: sistemanacional
+      POSTGRES_USER: sistemanacional
+      POSTGRES_PASSWORD: sistemanacional
+
+    ports:
+      - "5434:5432"
+
+    volumes:
+      - postgres_nacional_data:/var/lib/postgresql/data
+
 volumes:
   postgres_data:
+  postgres_nacional_data:
