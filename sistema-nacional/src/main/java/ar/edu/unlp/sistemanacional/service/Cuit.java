@@ -20,6 +20,11 @@ public final class Cuit {
         return digitos;
     }
 
+    public static boolean esValido(String cuit) {
+        String digitos = cuit == null ? "" : cuit.replaceAll("[\\s-]", "");
+        return digitos.matches("\\d{11}") && digitoVerificadorOk(digitos);
+    }
+
     private static boolean digitoVerificadorOk(String digitos) {
         int suma = 0;
         for (int i = 0; i < 10; i++) {

@@ -58,6 +58,21 @@ public class RecursoInventario {
         this.fechaActualizacion = LocalDateTime.now();
     }
 
+    // Llamar solo con la fila bloqueada (findAllByIdForUpdate). El service ya chequeó el disponible;
+    // esto es la última barrera para que nunca quede comprometido > total.
+    public void comprometer(int cantidad) {
+        if (cantidad > getDisponible()) {
+            throw new IllegalStateException("Sobre-asignación de " + tipoRecurso.getCodigo() + " en ONG " + ong.getCuit());
+        }
+        this.cantidadComprometida += cantidad;
+        this.fechaActualizacion = LocalDateTime.now();
+    }
+
+    public void liberar(int cantidad) {
+        this.cantidadComprometida = Math.max(0, cantidadComprometida - cantidad);
+        this.fechaActualizacion = LocalDateTime.now();
+    }
+
     public Long getId() { return id; }
     public Ong getOng() { return ong; }
     public TipoRecurso getTipoRecurso() { return tipoRecurso; }

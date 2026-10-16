@@ -1,5 +1,7 @@
 package ar.edu.unlp.sistemanacional.config;
 
+import ar.edu.unlp.sistemanacional.service.ConflictoRecursosException;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -39,5 +41,20 @@ public class ErroresHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail integridad(DataIntegrityViolationException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
                 "La operación choca con datos existentes (registro duplicado)");
+    }
+
+    // Compromiso rechazado (todo o nada): detalle de cada aporte en "items"
+    @ExceptionHandler(ConflictoRecursosException.class)
+    public ProblemDetail conflictoRecursos(ConflictoRecursosException ex) {
+        ProblemDetail problema = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problema.setProperty("items", ex.getItems());
+        return problema;
+    }
+
+    // Lock no obtenido / deadlock / versión optimista: otra operación tocó los mismos recursos
+    @ExceptionHandler(ConcurrencyFailureException.class)
+    public ProblemDetail concurrencia(ConcurrencyFailureException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "Los recursos están siendo modificados por otra operación, reintentar");
     }
 }
