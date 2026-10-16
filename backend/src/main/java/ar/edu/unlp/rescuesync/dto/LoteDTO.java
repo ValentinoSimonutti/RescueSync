@@ -4,6 +4,7 @@ public class LoteDTO {
 
     private Long id;
     private String recurso;
+    private String recursoCodigo;
     private int cantidad;
     private Long emergenciaId;
 
@@ -26,6 +27,14 @@ public class LoteDTO {
         this.recurso = recurso;
     }
 
+    public String getRecursoCodigo() {
+        return recursoCodigo;
+    }
+
+    public void setRecursoCodigo(String recursoCodigo) {
+        this.recursoCodigo = recursoCodigo;
+    }
+
     public int getCantidad() {
         return cantidad;
     }
@@ -41,4 +50,4 @@ public class LoteDTO {
     public void setEmergenciaId(Long emergenciaId) {
         this.emergenciaId = emergenciaId;
     }
-}
+}

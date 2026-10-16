@@ -2,18 +2,18 @@ package ar.edu.unlp.rescuesync.dto;
 
 public class NuevoLoteDTO {
 
-    private String recurso;
+    private String recursoCodigo;   // código del catálogo nacional; el nombre lo completa el backend
     private int cantidad;
 
     public NuevoLoteDTO() {
     }
 
-    public String getRecurso() {
-        return recurso;
+    public String getRecursoCodigo() {
+        return recursoCodigo;
     }
 
-    public void setRecurso(String recurso) {
-        this.recurso = recurso;
+    public void setRecursoCodigo(String recursoCodigo) {
+        this.recursoCodigo = recursoCodigo;
     }
 
     public int getCantidad() {
@@ -23,4 +23,4 @@ public class NuevoLoteDTO {
     public void setCantidad(int cantidad) {
         this.cantidad = cantidad;
     }
-}
+}

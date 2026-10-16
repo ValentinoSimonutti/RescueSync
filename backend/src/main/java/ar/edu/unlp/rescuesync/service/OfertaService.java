@@ -250,7 +250,7 @@ public class OfertaService {
             int porcentaje = requerido == 0 ? 100 : Math.min(100, ofrecido * 100 / requerido);
 
             detalle.add(new CoberturaLoteDTO(
-                    lote.getId(), lote.getRecurso(), requerido, ofrecido, faltante, porcentaje,
+                    lote.getId(), lote.getRecurso(), lote.getRecursoCodigo(), requerido, ofrecido, faltante, porcentaje,
                     ofrecido >= requerido,
                     ofertas.stream().map(o -> OfertaDTO.desde(o, null)).toList()
             ));

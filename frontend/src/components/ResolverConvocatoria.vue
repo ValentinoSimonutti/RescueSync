@@ -13,7 +13,7 @@ const error = ref("");
 const reabriendo = ref(false);
 let activo = true;
 const lotesIniciales = computed(() => cobertura.value?.lotes.map(l => ({
-  recurso: l.recurso, cantidad: l.requerido
+  recursoCodigo: l.recursoCodigo ?? "", cantidad: l.requerido
 })) ?? []);
 const hayAportes = computed(() => cobertura.value?.lotes.some(l => l.ofrecido > 0) ?? false);
 const pendientes = computed(() => cobertura.value?.lotes.filter(l => !l.cubierto).length ?? 0);

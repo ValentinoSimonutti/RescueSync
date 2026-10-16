@@ -6,6 +6,7 @@ import java.util.List;
 public record CoberturaLoteDTO(
         Long loteId,
         String recurso,
+        String recursoCodigo,
         int requerido,
         int ofrecido,          // suma de las ofertas activas (puede superar lo requerido)
         int faltante,          // 0 si está cubierto

@@ -24,9 +24,10 @@ export function crearEmergencia(
   return post<Emergencia>("/emergencias", datos);
 }
 
-// Un lote de necesidad: ej { recurso: "Paramédicos", cantidad: 5 }
+// Un lote de necesidad: ej { recursoCodigo: "PARAMEDICO", cantidad: 5 }
+// El código sale del catálogo nacional; el nombre lo completa el backend.
 export interface NuevoLote {
-  recurso: string;
+  recursoCodigo: string;
   cantidad: number;
 }
 
@@ -49,6 +50,7 @@ export function misEmergencias(): Promise<Emergencia[]> {
 export interface Lote {
   id: number;
   recurso: string;
+  recursoCodigo: string | null;   // null en lotes creados antes del catálogo
   cantidad: number;
   emergenciaId: number;
 }

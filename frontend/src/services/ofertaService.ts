@@ -47,6 +47,7 @@ export interface Ong {
 export interface CoberturaLote {
   loteId: number;
   recurso: string;
+  recursoCodigo: string | null;
   requerido: number;
   ofrecido: number;
   faltante: number;

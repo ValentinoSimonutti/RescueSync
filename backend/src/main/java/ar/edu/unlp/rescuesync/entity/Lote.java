@@ -12,7 +12,9 @@ public class Lote {
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
 
-    private String recurso;
+    private String recurso;          // nombre para mostrar (ej: "Paramédicos")
+
+    private String recursoCodigo;    // código del catálogo nacional (ej: "PARAMEDICO")
 
     private int cantidad;
 
@@ -25,8 +27,9 @@ public class Lote {
     public Lote(){
     }
 
-    public Lote(String recurso, int cantidad, Emergencia emergencia) {
+    public Lote(String recurso, String recursoCodigo, int cantidad, Emergencia emergencia) {
         this.recurso = recurso;
+        this.recursoCodigo = recursoCodigo;
         this.cantidad = cantidad;
         this.emergencia = emergencia;
     }
@@ -41,6 +44,14 @@ public class Lote {
 
     public void setRecurso(String recurso) {
         this.recurso = recurso;
+    }
+
+    public String getRecursoCodigo() {
+        return recursoCodigo;
+    }
+
+    public void setRecursoCodigo(String recursoCodigo) {
+        this.recursoCodigo = recursoCodigo;
     }
 
     public int getCantidad() {

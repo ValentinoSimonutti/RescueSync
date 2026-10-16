@@ -14,6 +14,8 @@ import ar.edu.unlp.rescuesync.entity.enums.EstadoEmergencia;
 import ar.edu.unlp.rescuesync.repository.EmergenciaRepository;
 import ar.edu.unlp.rescuesync.repository.LoteRepository;
 import ar.edu.unlp.rescuesync.repository.MunicipioRepository;
+import ar.edu.unlp.rescuesync.sistemanacional.SistemaNacionalClient;
+import ar.edu.unlp.rescuesync.sistemanacional.TipoRecursoDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -31,18 +33,21 @@ public class EmergenciaService {
     private final MunicipioRepository municipioRepository;
     private final BonitaClient bonitaClient;          // para crear el case en Bonita y completar tareas
     private final LoteRepository loteRepository;      // NUEVO: para guardar los lotes
+    private final SistemaNacionalClient sistemaNacional;   // catálogo nacional de recursos
 
     // Spring pasa todas las dependencias por el constructor (inyección de dependencias)
     public EmergenciaService(
             EmergenciaRepository emergenciaRepository,
             MunicipioRepository municipioRepository,
             BonitaClient bonitaClient,
-            LoteRepository loteRepository) {
+            LoteRepository loteRepository,
+            SistemaNacionalClient sistemaNacional) {
 
         this.emergenciaRepository = emergenciaRepository;
         this.municipioRepository = municipioRepository;
         this.bonitaClient = bonitaClient;
         this.loteRepository = loteRepository;
+        this.sistemaNacional = sistemaNacional;
     }
 
     // Alta de emergencia de punta a punta: Postgres + Bonita.
@@ -114,11 +119,15 @@ public class EmergenciaService {
 
         // 2. GUARDAR EN POSTGRES: cada lote asociado a la emergencia
         for (NuevoLoteDTO nuevo : dto.getLotes()) {
-            if (nuevo.getRecurso() == null || nuevo.getRecurso().isBlank() || nuevo.getCantidad() < 1) {
+            if (nuevo.getRecursoCodigo() == null || nuevo.getRecursoCodigo().isBlank() || nuevo.getCantidad() < 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Cada lote necesita un recurso y una cantidad mayor a 0");
             }
-            Lote lote = new Lote(nuevo.getRecurso(), nuevo.getCantidad(), emergencia);
+            // El recurso tiene que existir en el catálogo nacional; de ahí sale el nombre para mostrar
+            TipoRecursoDTO tipo = sistemaNacional.tipoRecurso(nuevo.getRecursoCodigo())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                            "El recurso " + nuevo.getRecursoCodigo() + " no está en el catálogo nacional"));
+            Lote lote = new Lote(tipo.nombre(), tipo.codigo(), nuevo.getCantidad(), emergencia);
             emergencia.addLote(lote);          // mantiene la relación en los dos sentidos
             loteRepository.save(lote);
         }
@@ -229,6 +238,7 @@ public class EmergenciaService {
                     LoteDTO dto = new LoteDTO();
                     dto.setId(lote.getId());
                     dto.setRecurso(lote.getRecurso());
+                    dto.setRecursoCodigo(lote.getRecursoCodigo());
                     dto.setCantidad(lote.getCantidad());
                     dto.setEmergenciaId(emergenciaId);
                     return dto;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { primeraLetraMayuscula } from "../utils/entradaTexto";
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
+import { tiposRecurso, type TipoRecurso } from "../services/catalogoService";
 import type { Tarea } from "../services/tareaService";
 import { publicarLotes, type NuevoLote } from "../services/emergenciaService";
 
@@ -17,7 +17,36 @@ const emit = defineEmits<{
 }>();
 
 // Lista de lotes que el coordinador va armando. Arranca con una fila vacía.
-const lotes = ref<NuevoLote[]>(props.lotesIniciales?.map(lote => ({ ...lote })) ?? [{ recurso: "", cantidad: 1 }]);
+const lotes = ref<NuevoLote[]>(props.lotesIniciales?.map(lote => ({ ...lote })) ?? [{ recursoCodigo: "", cantidad: 1 }]);
+
+// Catálogo nacional de tipos de recurso (para el select de cada lote)
+const catalogo = ref<TipoRecurso[]>([]);
+const cargandoCatalogo = ref(false);
+const errorCatalogo = ref("");
+const nombreRecurso = (codigo: string) => catalogo.value.find(t => t.codigo === codigo)?.nombre ?? codigo;
+
+// Agrupados por categoría para los <optgroup>
+const categorias = computed(() => {
+  const grupos = new Map<string, TipoRecurso[]>();
+  for (const tipo of catalogo.value) {
+    grupos.set(tipo.categoria, [...(grupos.get(tipo.categoria) ?? []), tipo]);
+  }
+  return [...grupos].map(([categoria, tipos]) => ({ categoria, tipos }));
+});
+
+async function cargarCatalogo() {
+  cargandoCatalogo.value = true;
+  errorCatalogo.value = "";
+  try {
+    catalogo.value = await tiposRecurso();
+  } catch (e) {
+    errorCatalogo.value = e instanceof Error ? e.message : "No se pudo cargar el catálogo de recursos";
+  } finally {
+    cargandoCatalogo.value = false;
+  }
+}
+
+onMounted(cargarCatalogo);
 
 // Duración de la ventana de ofertas en minutos (2 para probar rápido el timer)
 const duracionMinutos = ref(2);
@@ -28,8 +57,10 @@ const intentoPublicar = ref(false);
 const formulario = ref<HTMLElement | null>(null);
 const confirmacion = ref<HTMLDialogElement | null>(null);
 const cantidadValida = (valor: number) => Number.isSafeInteger(valor) && valor > 0;
-const erroresLotes = computed(() => lotes.value.map(lote => ({
-  recurso: lote.recurso.trim() ? "" : "Ingresá el recurso necesario.",
+const erroresLotes = computed(() => lotes.value.map((lote, i) => ({
+  recurso: !lote.recursoCodigo ? "Elegí el recurso necesario."
+    : lotes.value.findIndex(otro => otro.recursoCodigo === lote.recursoCodigo) !== i ? "Ese recurso ya está en otro lote."
+    : "",
   cantidad: cantidadValida(lote.cantidad) && lote.cantidad <= 100 ? "" : "Ingresá una cantidad entera entre 1 y 100."
 })));
 const errorDuracion = computed(() => cantidadValida(duracionMinutos.value) ? "" : "Ingresá una duración entera de al menos 1 minuto.");
@@ -43,7 +74,7 @@ function validar() {
 }
 
 function revisar() {
-  if (cargando.value) return;
+  if (cargando.value || !catalogo.value.length) return;
   error.value = "";
   if (validar()) confirmacion.value?.showModal();
 }
@@ -67,7 +98,7 @@ function limitarCantidad(evento: Event, lote: NuevoLote) {
 }
 
 function agregarLote() {
-  lotes.value.push({ recurso: "", cantidad: 1 });
+  lotes.value.push({ recursoCodigo: "", cantidad: 1 });
 }
 
 function quitarLote(indice: number) {
@@ -110,14 +141,26 @@ async function publicar() {
 
     <p v-if="reapertura" class="ong-ayuda">Revisá las necesidades anteriores y ajustá las cantidades y el nuevo plazo de ofertas.</p>
     <p class="lotes-requeridos">Todos los campos son obligatorios.</p>
+    <p v-if="cargandoCatalogo" class="ong-ayuda" role="status">Cargando el catálogo nacional de recursos. Si el Sistema Nacional estaba inactivo, puede tardar hasta un minuto.</p>
+    <p v-if="errorCatalogo" class="emergencia-error" role="alert">
+      {{ errorCatalogo }}
+      <button type="button" class="bandeja-actualizar" @click="cargarCatalogo">Reintentar</button>
+    </p>
 
     <!-- Una fila por lote -->
     <div v-for="(lote, i) in lotes" :key="i" class="lote-fila">
       <div class="emergencia-campo lote-recurso">
         <label :for="`recurso-${i}`">Recurso</label>
-        <input :id="`recurso-${i}`" v-model="lote.recurso" @input="primeraLetraMayuscula($event, valor => lote.recurso = valor)" autocapitalize="sentences" type="text" placeholder="Ej: Paramédicos" required
+        <select :id="`recurso-${i}`" v-model="lote.recursoCodigo" required :disabled="!catalogo.length"
           :aria-invalid="intentoPublicar && !!erroresLotes[i]?.recurso"
-          :aria-describedby="intentoPublicar && erroresLotes[i]?.recurso ? `error-recurso-${i}` : undefined" />
+          :aria-describedby="intentoPublicar && erroresLotes[i]?.recurso ? `error-recurso-${i}` : undefined">
+          <option value="" disabled>{{ cargandoCatalogo ? "Cargando catálogo..." : "Elegí un recurso" }}</option>
+          <optgroup v-for="grupo in categorias" :key="grupo.categoria" :label="capitalizar(grupo.categoria)">
+            <option v-for="tipo in grupo.tipos" :key="tipo.codigo" :value="tipo.codigo">
+              {{ tipo.nombre }} ({{ tipo.unidad }})
+            </option>
+          </optgroup>
+        </select>
         <p v-if="intentoPublicar && erroresLotes[i]?.recurso" :id="`error-recurso-${i}`" class="campo-error">{{ erroresLotes[i]?.recurso }}</p>
       </div>
       <div class="emergencia-campo lote-cantidad">
@@ -146,7 +189,7 @@ async function publicar() {
 
     <div class="lote-acciones">
       <button type="button" class="bandeja-actualizar" @click="emit('volver')">Volver</button>
-      <button type="button" class="btn-ingresar emergencia-submit" @click="revisar" :disabled="cargando">
+      <button type="button" class="btn-ingresar emergencia-submit" @click="revisar" :disabled="cargando || !catalogo.length">
         {{ cargando ? "Publicando..." : reapertura ? "Revisar reapertura" : "Publicar convocatoria" }}
       </button>
     </div>
@@ -166,7 +209,7 @@ async function publicar() {
         </div>
         <div v-for="(lote, i) in lotes" :key="i">
           <dt>Lote {{ i + 1 }}</dt>
-          <dd>{{ lote.recurso }} · Cantidad: {{ lote.cantidad }}</dd>
+          <dd>{{ nombreRecurso(lote.recursoCodigo) }} · Cantidad: {{ lote.cantidad }}</dd>
         </div>
         <div>
           <dt>Duración de la ventana de ofertas</dt>

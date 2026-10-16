@@ -15,6 +15,9 @@ import ar.edu.unlp.rescuesync.auth.Usuario;
 @Component
 public class DataLoader implements CommandLineRunner {
 
+    private static final String CUIT_ONG_1 = "30712345671";
+    private static final String CUIT_ONG_2 = "30700000016";
+
     private final MunicipioRepository municipioRepository;
     private final CentroCoordinadorRepository centroCoordinadorRepository;
     private final ONGRepository ongRepository;
@@ -42,8 +45,9 @@ public class DataLoader implements CommandLineRunner {
             CentroCoordinador centroCoordinador =
                     new CentroCoordinador("Centro Coordinador 1");
 
-            ONG ong1 = new ONG("ONG 1");
-            ONG ong2 = new ONG("ONG 2");
+            // Mismos CUIT que en el seed del Sistema Nacional
+            ONG ong1 = new ONG("ONG 1", CUIT_ONG_1);
+            ONG ong2 = new ONG("ONG 2", CUIT_ONG_2);
 
             municipioRepository.save(municipio);
             centroCoordinadorRepository.save(centroCoordinador);
@@ -100,6 +104,21 @@ public class DataLoader implements CommandLineRunner {
             usuarioRepository.save(usuarioOng1);
             usuarioRepository.save(usuarioOng2);
             usuarioRepository.save(auditor1);
+        }
+
+        // Bases creadas antes de que existiera el CUIT: se lo completa a las ONGs del seed
+        for (ONG ong : ongRepository.findAll()) {
+            if (ong.getCuit() == null) {
+                String cuit = switch (ong.getNombre()) {
+                    case "ONG 1" -> CUIT_ONG_1;
+                    case "ONG 2" -> CUIT_ONG_2;
+                    default -> null;
+                };
+                if (cuit != null) {
+                    ong.setCuit(cuit);
+                    ongRepository.save(ong);
+                }
+            }
         }
     }
 }

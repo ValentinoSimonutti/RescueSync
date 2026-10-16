@@ -26,3 +26,9 @@ bonita:
   # Clave que manda Bonita (header X-Api-Key) al pedir las ofertas cuando vence el timer
   integration-key: rescuesync-bonita-2026
 
+sistema-nacional:
+  # API desplegada en Render. Para usar la local: SISTEMA_NACIONAL_URL=http://localhost:8090
+  url: ${SISTEMA_NACIONAL_URL:https://rescuesync-5qaa.onrender.com}
+  # Cuenta de sistema (la misma que usa Bonita)
+  usuario: ${SISTEMA_NACIONAL_USUARIO:bonita}
+  password: ${SISTEMA_NACIONAL_PASSWORD:bonita123}

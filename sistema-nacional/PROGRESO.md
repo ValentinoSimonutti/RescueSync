@@ -1,6 +1,6 @@
 # Sistema Nacional — Estado de avance (Parte 3 del TP)
 
-Última actualización: 15/10/2026. Entrega 3: semana del **22/10**.
+Última actualización: 16/10/2026. Entrega 3: semana del **22/10**.
 
 API externa "Sistema Nacional de Gestión de Recursos y Riesgos": JWT, dockerizada, desplegada en un cloud, con Swagger.
 Bonita orquesta: cuando vence el timer, pide las ofertas al backend local, las manda a esta API para validarlas, después compromete los recursos adjudicados y al final los libera.
@@ -21,7 +21,7 @@ Bonita orquesta: cuando vence el timer, pide las ofertas al backend local, las m
 | M0 | Scaffold (pom, yaml con env vars, Postgres en compose) | ✅ |
 | M1 | Dominio + seed, auth JWT, onboarding, catálogo y consultas | ✅ |
 | M2 | Validación por niveles, compromiso con locking, liberación y cierre | ✅ |
-| M3 | Zona horaria GMT-3, Swagger completo + `openapi.json`, Dockerfile y compose | ✅ (falta el deploy en Neon + Render, lo hacen ustedes) |
+| M3 | Zona horaria GMT-3, Swagger completo + `openapi.json`, Dockerfile y compose | ✅ (deploy en Render + Neon funcionando) |
 | M4 | Integración: backend local (CUIT, catálogo), front, endpoints para Bonita, conectores Bonita, README | ⏳ |
 
 Tests: **23 en verde** (`./mvnw test`, necesita Docker porque usa Testcontainers).
@@ -106,6 +106,11 @@ La liberación bloquea en el mismo orden. La demo está en `ConcurrenciaCompromi
 - **Docker:** `Dockerfile` multi-stage (con las dependencias cacheadas en una capa), JRE 21, usuario no root y `MaxRAMPercentage=75`, más `.dockerignore`. En el compose: servicio `sistema-nacional` con healthcheck en `/actuator/health` y `depends_on` de `postgres-nacional` con `service_healthy`.
 
 ## Pendiente de M3: deploy (lo hacen ustedes con sus cuentas)
+**Estado al 16/10:** Neon ✅. El proyecto `rough-wildflower-34275101` (branch `production`, base `neondb`) ya tiene corrido el `ALTER DATABASE ... timezone` y la connection string está copiada.
+Render ✅ (16/10): https://rescuesync-5qaa.onrender.com — Swagger en `/swagger-ui.html`. Probado: health UP, login `bonita` y catálogo OK. Env vars: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (las `SEED_*` quedan en los defaults).
+Antes: no dejaba elegir el repo RescueSync. Lo más probable es que la GitHub App de Render no tenga acceso a ese repo. Se arregla en GitHub → Settings → Applications → Render → Configure → Repository access, o con "Configure account" desde Render. Si el repo es de una organización, la org también tiene que aprobar la app.
+Del onboarding que propone Neon (`neon init` / `neon deploy` / `.env.local`) **no hace falta nada**: está pensado para apps de Node y acá alcanza con las env vars `DB_*`.
+
 1. **Neon:** crear el proyecto (región `sa-east-1` / São Paulo si está disponible) y en el SQL Editor correr:
    `ALTER DATABASE <db> SET timezone TO 'America/Argentina/Buenos_Aires';`
    Después armar `DB_URL=jdbc:postgresql://<host>/<db>?sslmode=require`, `DB_USER` y `DB_PASSWORD`. Con el host *pooled* (`-pooler`) también funciona; si hay problemas, usar el directo.
@@ -115,6 +120,15 @@ La liberación bloquea en el mismo orden. La demo está en `ConcurrenciaCompromi
 4. Probar contra la URL pública: login → `POST /api/validaciones/ofertas` → `POST /api/compromisos` → `POST /api/proyectos/{ref}/cierre`, y anotar las URLs (API + Swagger) para la entrega.
 
 ## Después: M4 (integración)
+Plan aprobado el 16/10, en tres milestones:
+- ✅ **M4a** (16/10, falta probarlo en el navegador con Bonita): backend local + front (CUIT, catálogo, `SistemaNacionalClient`, select en `GenerarLotesForm`).
+  - `backend/.../sistemanacional/`: `SistemaNacionalClient` (login con la cuenta `bonita`, JWT cacheado, reintento si responde 401, catálogo cacheado 10 min; si la API cae, sigue usando el último catálogo; timeout de lectura de 90 s por el arranque en frío de Render) y un handler que devuelve 502 con `mensaje`.
+  - Config `sistema-nacional.url/usuario/password` (env `SISTEMA_NACIONAL_*`). Por defecto apunta a Render; para la local, `SISTEMA_NACIONAL_URL=http://localhost:8090`.
+  - `ONG.cuit` (seed y backfill por nombre para las bases existentes). `Lote` guarda `recurso` (el nombre para mostrar) y `recursoCodigo` (el código del catálogo); al publicar se valida el código contra el catálogo y el nombre sale de ahí. `LoteDTO` y `CoberturaLoteDTO` exponen `recursoCodigo`.
+  - `GET /api/catalogo/tipos-recurso` (con sesión). En el front, `catalogoService.ts` y un select agrupado por categoría en `GenerarLotesForm`, que no deja repetir recursos.
+- **M4b:** endpoints para Bonita (`validacionRequest` armado en el GET de ofertas, POST de validaciones, avisos de compromiso y cierre, etiqueta del rol en el front).
+- **M4c:** scripts y guía de Bonita en `RescueSync/bonita/`, README.
+
 - **Backend local:** agregar `ONG.cuit` (seed con los CUIT de arriba). `Lote.recurso` pasa a guardar el código del catálogo. Sumar un endpoint proxy `GET /api/catalogo/tipos-recurso`, que llama a la API con la cuenta `bonita` y cachea.
 - **Front:** en `GenerarLotesForm.vue`, un select de tipos de recurso.
 - **DTOs que lee Bonita** (`CoberturaDTO`, `OfertaDTO`, `AporteDTO`): que incluyan cuit, código de recurso, gravedad y emergenciaRef, con la misma forma que `ValidacionRequest`.
