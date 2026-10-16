@@ -21,10 +21,10 @@ Bonita orquesta: cuando vence el timer, pide las ofertas al backend local, las m
 | M0 | Scaffold (pom, yaml con env vars, Postgres en compose) | ✅ |
 | M1 | Dominio + seed, auth JWT, onboarding, catálogo y consultas | ✅ |
 | M2 | Validación por niveles, compromiso con locking, liberación y cierre | ✅ |
-| M3 | Swagger completo + `openapi.json`, Dockerfile, deploy Render + Neon | ⏳ siguiente |
+| M3 | Zona horaria GMT-3, Swagger completo + `openapi.json`, Dockerfile y compose | ✅ (falta el deploy en Neon + Render, lo hacen ustedes) |
 | M4 | Integración: backend local (CUIT, catálogo), front, endpoints para Bonita, conectores Bonita, README | ⏳ |
 
-Tests: **21 en verde** (`./mvnw test`, necesita Docker porque usa Testcontainers).
+Tests: **23 en verde** (`./mvnw test`, necesita Docker porque usa Testcontainers).
 
 ## Cómo correrlo
 ```bash
@@ -32,6 +32,7 @@ cd RescueSync
 docker compose up -d postgres-nacional        # Postgres del Sistema Nacional en el puerto 5434
 cd sistema-nacional && ./mvnw spring-boot:run  # API en http://localhost:8090
 ```
+O todo en Docker, con la misma imagen que corre en Render: `docker compose up -d --build sistema-nacional` (levanta también `postgres-nacional`).
 - Swagger: http://localhost:8090/swagger-ui.html. Primero se hace login, después se toca **Authorize** y se pega el token.
 - Health: http://localhost:8090/actuator/health
 
@@ -89,12 +90,29 @@ Los errores salen como ProblemDetail (`status`, `title`, `detail`). El 409 de un
 
 La liberación bloquea en el mismo orden. La demo está en `ConcurrenciaCompromisoTest`: 10 emergencias piden en paralelo los 3 botes de ONG 1, ganan exactamente 3 y el resto recibe 409. Si se saca el `FOR UPDATE`, el test falla con `ObjectOptimisticLockingFailureException`.
 
-## Próximo: M3 (Entrega 3)
-1. **Swagger:** ejemplos en los DTOs (`@Schema(example=...)`), descripción de los códigos de respuesta y exportar `openapi.json` al repo.
-2. **Dockerfile** multi-stage (`maven:3-eclipse-temurin-21` → `eclipse-temurin:21-jre`), usuario no root, que tome el `PORT` de Render. Agregar `.dockerignore` y sumar el servicio `sistema-nacional` al `docker-compose.yml`, con healthcheck y depends_on de `postgres-nacional`.
-3. **Neon** (lo hacen ustedes con su cuenta): crear la base y armar `DB_URL=jdbc:postgresql://<host>/<db>?sslmode=require`, más `DB_USER` y `DB_PASSWORD`.
-4. **Render:** Web Service con Docker y Root Directory `sistema-nacional`. Variables de entorno: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (32 caracteres o más) y `SEED_*_PASSWORD` (opcionales). Health check en `/actuator/health`.
-5. Probar el flujo login → validar → comprometer → cierre contra la URL pública y anotar las URLs para la entrega.
+## M3: lo que quedó hecho
+- **Zona horaria:** todo está en GMT-3 (`America/Argentina/Buenos_Aires`).
+  - `config/ZonaHorariaConfig` fija la zona de la JVM: los `LocalDateTime.now()` se guardan sin zona y en Docker/Render la JVM arranca en UTC.
+  - Surefire corre los tests con `-Duser.timezone=UTC` para simular la nube, y `ZonaHorariaTest` verifica que igual salga GMT-3.
+  - `spring.jackson.time-zone` también está en Buenos Aires.
+  - En el compose, las dos Postgres tienen `TZ`/`PGTZ`, así `now()` y psql muestran -03.
+  - El Dockerfile tiene `ENV TZ`.
+- **Swagger:** ejemplos (`@Schema(example)`) en todos los DTOs de request.
+  - Los errores comunes los agrega solo un `OperationCustomizer` en `OpenApiConfig`, mirando la firma del método: body → 400, token → 401, `@PreAuthorize` → 403, path variable → 404.
+  - Los 409 están anotados a mano en registro, verificar y comprometer.
+  - Hay un schema `Error` con la forma del ProblemDetail.
+- **`openapi.json`** exportado en `sistema-nacional/`. Para regenerarlo, con la API levantada:
+  `curl -s localhost:8090/v3/api-docs | python3 -m json.tool --indent 2 > openapi.json`
+- **Docker:** `Dockerfile` multi-stage (con las dependencias cacheadas en una capa), JRE 21, usuario no root y `MaxRAMPercentage=75`, más `.dockerignore`. En el compose: servicio `sistema-nacional` con healthcheck en `/actuator/health` y `depends_on` de `postgres-nacional` con `service_healthy`.
+
+## Pendiente de M3: deploy (lo hacen ustedes con sus cuentas)
+1. **Neon:** crear el proyecto (región `sa-east-1` / São Paulo si está disponible) y en el SQL Editor correr:
+   `ALTER DATABASE <db> SET timezone TO 'America/Argentina/Buenos_Aires';`
+   Después armar `DB_URL=jdbc:postgresql://<host>/<db>?sslmode=require`, `DB_USER` y `DB_PASSWORD`. Con el host *pooled* (`-pooler`) también funciona; si hay problemas, usar el directo.
+2. **Render:** New → Web Service, conectar el repo, Runtime **Docker**, Root Directory `sistema-nacional`, Health Check Path `/actuator/health`.
+   Variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (32 caracteres o más, ej. `openssl rand -base64 48`) y opcionalmente `SEED_ADMIN_PASSWORD`, `SEED_SISTEMA_PASSWORD` y `SEED_ONG_PASSWORD`. `PORT` lo pone Render.
+3. El plan free se duerme a los 15 minutos sin uso y el primer request tarda alrededor de 1 minuto. Antes de una demo, entrar a `/actuator/health`.
+4. Probar contra la URL pública: login → `POST /api/validaciones/ofertas` → `POST /api/compromisos` → `POST /api/proyectos/{ref}/cierre`, y anotar las URLs (API + Swagger) para la entrega.
 
 ## Después: M4 (integración)
 - **Backend local:** agregar `ONG.cuit` (seed con los CUIT de arriba). `Lote.recurso` pasa a guardar el código del catálogo. Sumar un endpoint proxy `GET /api/catalogo/tipos-recurso`, que llama a la API con la cuenta `bonita` y cachea.
@@ -108,7 +126,5 @@ La liberación bloquea en el mismo orden. La demo está en `ConcurrenciaCompromi
 - **README** de `sistema-nacional` y del repo raíz.
 
 ## Pendientes y notas
-- Hay que revisar la zona horaria de los `LocalDateTime` en la base: en una prueba local, `fechaAlta` apareció con hora UTC. Conviene fijar `TZ=America/Argentina/Buenos_Aires` en Docker y Render, o `spring.jpa.properties.hibernate.jdbc.time_zone`.
 - `ddl-auto: update` + `DataLoader`, igual que el backend. Si cambia el modelo, conviene borrar el volumen `postgres_nacional_data`.
-- El `docker-compose.yml` raíz ya tiene `postgres-nacional`, pero falta sumar el servicio de la API (M3).
 - No hay commits todavía: los hacen ustedes.

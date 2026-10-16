@@ -7,6 +7,9 @@ import ar.edu.unlp.sistemanacional.service.OngService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,6 +35,8 @@ public class OngController {
     @ResponseStatus(HttpStatus.CREATED)
     @SecurityRequirements
     @Operation(summary = "Onboarding: registra una ONG y el usuario de su representante (queda PENDIENTE)")
+    @ApiResponse(responseCode = "409", description = "Ya hay una ONG con ese CUIT o el usuario ya existe",
+            content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "Error")))
     public OngDetalleDTO registrar(@Valid @RequestBody RegistroOngRequest request) {
         return ongService.registrar(request);
     }

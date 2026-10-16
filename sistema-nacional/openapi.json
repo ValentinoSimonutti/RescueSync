@@ -1,0 +1,1957 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sistema Nacional de Gesti\u00f3n de Recursos y Riesgos",
+    "description": "API externa de RescueSync: onboarding y consulta de ONGs, validaci\u00f3n por niveles de competencia, compromiso (bloqueo) y liberaci\u00f3n de recursos.\n\n**C\u00f3mo probarla:** `POST /api/auth/login` (ej. `bonita` / `bonita123`), copiar el `token`, tocar **Authorize** y pegarlo.\n\nLos errores salen como ProblemDetail (`status`, `title`, `detail`). Las fechas est\u00e1n en hora argentina (GMT-3).",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8090",
+      "description": "Generated server url"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Compromiso de recursos",
+      "description": "Bloqueo transaccional de los recursos adjudicados"
+    },
+    {
+      "name": "Liberaci\u00f3n y cierre",
+      "description": "Finalizaci\u00f3n de actividades y cierre de proyectos"
+    },
+    {
+      "name": "ONGs",
+      "description": "Onboarding, consulta y gesti\u00f3n de ONGs"
+    },
+    {
+      "name": "Cat\u00e1logo y consulta",
+      "description": "Certificaciones, tipos de recurso y disponibilidad global"
+    }
+  ],
+  "paths": {
+    "/api/ongs/me/inventario/{tipoRecurso}": {
+      "put": {
+        "tags": [
+          "ONGs"
+        ],
+        "summary": "Declara cu\u00e1nto tiene mi ONG de un tipo de recurso (rol ONG)",
+        "operationId": "actualizarInventario",
+        "parameters": [
+          {
+            "name": "tipoRecurso",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarInventarioRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventarioDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos (el detalle por campo viene en `errores`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasRole('ONG'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe el recurso indicado en la URL",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/validaciones/ofertas": {
+      "post": {
+        "tags": [
+          "Validaci\u00f3n por niveles de competencia"
+        ],
+        "summary": "Eval\u00faa las ofertas de una emergencia y devuelve el perfil de competencia de cada aporte (PRINCIPAL / APOYO_SECUNDARIO / SIN_HABILITACION_VIGENTE). No bloquea recursos",
+        "operationId": "validar",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidacionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidacionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos (el detalle por campo viene en `errores`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasAnyRole('SISTEMA', 'ADMIN'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proyectos/{emergenciaRef}/ongs/{cuit}/finalizacion": {
+      "post": {
+        "tags": [
+          "Liberaci\u00f3n y cierre"
+        ],
+        "summary": "La ONG termin\u00f3 sus actividades: libera sus recursos bloqueados en esta emergencia",
+        "operationId": "finalizarOng",
+        "parameters": [
+          {
+            "name": "emergenciaRef",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cuit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiberacionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasRole('SISTEMA'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe el recurso indicado en la URL",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proyectos/{emergenciaRef}/cierre": {
+      "post": {
+        "tags": [
+          "Liberaci\u00f3n y cierre"
+        ],
+        "summary": "Cierra el proyecto: libera todo lo que siga bloqueado y no admite m\u00e1s compromisos",
+        "operationId": "cerrar",
+        "parameters": [
+          {
+            "name": "emergenciaRef",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiberacionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasRole('SISTEMA'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe el recurso indicado en la URL",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ongs/{cuit}/certificaciones": {
+      "post": {
+        "tags": [
+          "ONGs"
+        ],
+        "summary": "Otorga o renueva una certificaci\u00f3n a una ONG (ADMIN)",
+        "operationId": "otorgarCertificacion",
+        "parameters": [
+          {
+            "name": "cuit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OtorgarCertificacionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OngDetalleDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos (el detalle por campo viene en `errores`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasRole('ADMIN'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe el recurso indicado en la URL",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ongs/registro": {
+      "post": {
+        "tags": [
+          "ONGs"
+        ],
+        "summary": "Onboarding: registra una ONG y el usuario de su representante (queda PENDIENTE)",
+        "operationId": "registrar",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroOngRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "409": {
+            "description": "Ya hay una ONG con ese CUIT o el usuario ya existe",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OngDetalleDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos (el detalle por campo viene en `errores`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/compromisos": {
+      "get": {
+        "tags": [
+          "Compromiso de recursos"
+        ],
+        "summary": "Lista compromisos. Filtros opcionales. Una ONG solo ve los suyos",
+        "operationId": "buscar",
+        "parameters": [
+          {
+            "name": "emergenciaRef",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ongCuit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVO",
+                "LIBERADO"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CompromisoDTO"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Compromiso de recursos"
+        ],
+        "summary": "Compromete (bloquea) los recursos de las ofertas adjudicadas. Todo o nada: 409 con el detalle si alg\u00fan aporte no cumple. Idempotente por (emergencia, oferta, ONG)",
+        "operationId": "comprometer",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompromisoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "409": {
+            "description": "Alg\u00fan aporte no cumple (detalle en `items`), el proyecto est\u00e1 cerrado o los recursos los est\u00e1 tocando otra operaci\u00f3n",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompromisoResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos (el detalle por campo viene en `errores`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasRole('SISTEMA'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/compromisos/verificar": {
+      "post": {
+        "tags": [
+          "Compromiso de recursos"
+        ],
+        "summary": "Chequea las restricciones (habilitaci\u00f3n y disponibilidad) sin bloquear nada",
+        "operationId": "verificar",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompromisoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Resultado de cada aporte, sin bloquear nada",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerificacionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "El proyecto de la emergencia ya est\u00e1 cerrado",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos (el detalle por campo viene en `errores`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasAnyRole('SISTEMA', 'ADMIN'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Autenticaci\u00f3n"
+        ],
+        "summary": "Login: devuelve el JWT para usar en el resto de la API",
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Token JWT y datos del usuario",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Usuario o contrase\u00f1a incorrectos",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos (el detalle por campo viene en `errores`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/ongs/{cuit}/estado": {
+      "patch": {
+        "tags": [
+          "ONGs"
+        ],
+        "summary": "Habilita o suspende una ONG (ADMIN)",
+        "operationId": "cambiarEstado",
+        "parameters": [
+          {
+            "name": "cuit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambioEstadoOngRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OngDetalleDTO"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inv\u00e1lidos (el detalle por campo viene en `errores`)",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasRole('ADMIN'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe el recurso indicado en la URL",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recursos/disponibilidad": {
+      "get": {
+        "tags": [
+          "Cat\u00e1logo y consulta"
+        ],
+        "summary": "Disponibilidad global de recursos (solo ONGs habilitadas). Filtro opcional por tipo",
+        "operationId": "disponibilidad",
+        "parameters": [
+          {
+            "name": "tipoRecurso",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DisponibilidadDTO"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proyectos/{emergenciaRef}": {
+      "get": {
+        "tags": [
+          "Liberaci\u00f3n y cierre"
+        ],
+        "summary": "Estado del proyecto de una emergencia y todos sus compromisos",
+        "operationId": "proyecto",
+        "parameters": [
+          {
+            "name": "emergenciaRef",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProyectoDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasAnyRole('SISTEMA', 'ADMIN'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe el recurso indicado en la URL",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ongs": {
+      "get": {
+        "tags": [
+          "ONGs"
+        ],
+        "summary": "Lista ONGs. Filtros opcionales: estado, certificaci\u00f3n vigente y tipo de recurso disponible",
+        "operationId": "listar",
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDIENTE",
+                "HABILITADA",
+                "SUSPENDIDA"
+              ]
+            }
+          },
+          {
+            "name": "certificacion",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tipoRecurso",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OngDTO"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ongs/{cuit}": {
+      "get": {
+        "tags": [
+          "ONGs"
+        ],
+        "summary": "Perfil completo de una ONG (certificaciones e inventario)",
+        "operationId": "detalle",
+        "parameters": [
+          {
+            "name": "cuit",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OngDetalleDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe el recurso indicado en la URL",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ongs/me": {
+      "get": {
+        "tags": [
+          "ONGs"
+        ],
+        "summary": "Perfil de mi ONG (rol ONG)",
+        "operationId": "miOng",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/OngDetalleDTO"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "El rol no tiene permiso (hasRole('ONG'))",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo/tipos-recurso": {
+      "get": {
+        "tags": [
+          "Cat\u00e1logo y consulta"
+        ],
+        "summary": "Tipos de recurso (los c\u00f3digos que usa la app local en sus lotes)",
+        "operationId": "tiposRecurso",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TipoRecursoDTO"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/catalogo/certificaciones": {
+      "get": {
+        "tags": [
+          "Cat\u00e1logo y consulta"
+        ],
+        "summary": "Certificaciones del cat\u00e1logo nacional y qu\u00e9 recursos habilita cada una",
+        "operationId": "certificaciones",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificacionDTO"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Falta el token, es inv\u00e1lido o venci\u00f3",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "description": "Error en formato ProblemDetail (RFC 9457)",
+        "properties": {
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "example": 409
+          },
+          "title": {
+            "type": "string",
+            "example": "Conflict"
+          },
+          "detail": {
+            "type": "string",
+            "example": "No se pueden comprometer los recursos"
+          },
+          "instance": {
+            "type": "string",
+            "example": "/api/compromisos"
+          },
+          "errores": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Solo en 400: mensaje por campo inv\u00e1lido"
+          },
+          "items": {
+            "type": "array",
+            "description": "Solo en el 409 de un compromiso: el resultado de cada aporte",
+            "items": {
+              "$ref": "#/components/schemas/ItemVerificacion"
+            }
+          }
+        }
+      },
+      "ActualizarInventarioRequest": {
+        "type": "object",
+        "properties": {
+          "cantidadTotal": {
+            "type": "integer",
+            "format": "int32",
+            "example": 15,
+            "minimum": 0
+          }
+        }
+      },
+      "InventarioDTO": {
+        "type": "object",
+        "properties": {
+          "tipoRecurso": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "unidad": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comprometido": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "disponible": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "AporteRequest": {
+        "type": "object",
+        "properties": {
+          "cuit": {
+            "type": "string",
+            "example": "30712345671",
+            "minLength": 1
+          },
+          "cantidad": {
+            "type": "integer",
+            "format": "int32",
+            "example": 2,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "cuit"
+        ]
+      },
+      "OfertaRequest": {
+        "type": "object",
+        "properties": {
+          "ofertaRef": {
+            "type": "string",
+            "example": "OF-31",
+            "minLength": 1
+          },
+          "loteRef": {
+            "type": "string",
+            "example": "LT-7"
+          },
+          "tipoRecurso": {
+            "type": "string",
+            "example": "BOTE_RESCATE",
+            "minLength": 1
+          },
+          "cantidadRequerida": {
+            "type": "integer",
+            "format": "int32",
+            "example": 4,
+            "minimum": 0
+          },
+          "aportes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AporteRequest"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "aportes",
+          "ofertaRef",
+          "tipoRecurso"
+        ]
+      },
+      "ValidacionRequest": {
+        "type": "object",
+        "properties": {
+          "emergenciaRef": {
+            "type": "string",
+            "example": "EMG-12",
+            "minLength": 1
+          },
+          "gravedad": {
+            "type": "string",
+            "enum": [
+              "BAJA",
+              "MEDIA",
+              "ALTA"
+            ],
+            "example": "ALTA"
+          },
+          "tipoDesastre": {
+            "type": "string",
+            "example": "Inundaci\u00f3n"
+          },
+          "ofertas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfertaRequest"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "emergenciaRef",
+          "gravedad",
+          "ofertas"
+        ]
+      },
+      "OfertaValidada": {
+        "type": "object",
+        "properties": {
+          "ofertaRef": {
+            "type": "string"
+          },
+          "loteRef": {
+            "type": "string"
+          },
+          "tipoRecurso": {
+            "type": "string"
+          },
+          "cantidadRequerida": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidadOfrecida": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidadValidada": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cubreRequerido": {
+            "type": "boolean"
+          },
+          "rolOferta": {
+            "type": "string",
+            "enum": [
+              "PRINCIPAL",
+              "APOYO_SECUNDARIO",
+              "SIN_HABILITACION_VIGENTE"
+            ]
+          },
+          "observaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "aportes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PerfilCompetencia"
+            }
+          }
+        }
+      },
+      "PerfilCompetencia": {
+        "type": "object",
+        "properties": {
+          "cuit": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "estadoOng": {
+            "type": "string"
+          },
+          "cantidadOfrecida": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "disponible": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cantidadValidable": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "certificacionRequerida": {
+            "type": "string"
+          },
+          "nivelCompetencia": {
+            "type": "string",
+            "enum": [
+              "BASICO",
+              "INTERMEDIO",
+              "AVANZADO"
+            ]
+          },
+          "nivelRiesgoMaximo": {
+            "type": "string",
+            "enum": [
+              "BAJA",
+              "MEDIA",
+              "ALTA"
+            ]
+          },
+          "capacidadesHabilitadas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rolAsignado": {
+            "type": "string",
+            "enum": [
+              "PRINCIPAL",
+              "APOYO_SECUNDARIO",
+              "SIN_HABILITACION_VIGENTE"
+            ]
+          },
+          "observaciones": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ValidacionResponse": {
+        "type": "object",
+        "properties": {
+          "emergenciaRef": {
+            "type": "string"
+          },
+          "gravedad": {
+            "type": "string",
+            "enum": [
+              "BAJA",
+              "MEDIA",
+              "ALTA"
+            ]
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ofertas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfertaValidada"
+            }
+          }
+        }
+      },
+      "CompromisoDTO": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "emergenciaRef": {
+            "type": "string"
+          },
+          "ofertaRef": {
+            "type": "string"
+          },
+          "cuit": {
+            "type": "string"
+          },
+          "ongNombre": {
+            "type": "string"
+          },
+          "tipoRecurso": {
+            "type": "string"
+          },
+          "cantidad": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "rolAsignado": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaCompromiso": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaLiberacion": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LiberacionResponse": {
+        "type": "object",
+        "properties": {
+          "emergenciaRef": {
+            "type": "string"
+          },
+          "cuit": {
+            "type": "string"
+          },
+          "estadoProyecto": {
+            "type": "string"
+          },
+          "liberados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompromisoDTO"
+            }
+          }
+        }
+      },
+      "OtorgarCertificacionRequest": {
+        "type": "object",
+        "properties": {
+          "certificacion": {
+            "type": "string",
+            "example": "PRIMEROS_AUXILIOS",
+            "minLength": 1
+          },
+          "nivel": {
+            "type": "string",
+            "enum": [
+              "BASICO",
+              "INTERMEDIO",
+              "AVANZADO"
+            ],
+            "example": "INTERMEDIO"
+          },
+          "vigenteHasta": {
+            "type": "string",
+            "format": "date",
+            "example": "2027-12-31"
+          }
+        },
+        "required": [
+          "certificacion",
+          "nivel",
+          "vigenteHasta"
+        ]
+      },
+      "CertificacionOngDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "nivel": {
+            "type": "string"
+          },
+          "fechaOtorgamiento": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigenteHasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "vigente": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OngDetalleDTO": {
+        "type": "object",
+        "properties": {
+          "cuit": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "provincia": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "motivoEstado": {
+            "type": "string"
+          },
+          "fechaAlta": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "certificaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificacionOngDTO"
+            }
+          },
+          "inventario": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InventarioDTO"
+            }
+          }
+        }
+      },
+      "RegistroOngRequest": {
+        "type": "object",
+        "properties": {
+          "cuit": {
+            "type": "string",
+            "example": "20-12345678-6",
+            "minLength": 1
+          },
+          "nombre": {
+            "type": "string",
+            "example": "Cruz Solidaria Pampeana",
+            "maxLength": 150,
+            "minLength": 0
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "contacto@cruzpampeana.org",
+            "minLength": 1
+          },
+          "provincia": {
+            "type": "string",
+            "example": "La Pampa",
+            "minLength": 1
+          },
+          "username": {
+            "type": "string",
+            "example": "cruz-pampeana",
+            "maxLength": 50,
+            "minLength": 3
+          },
+          "password": {
+            "type": "string",
+            "example": "secreta123",
+            "maxLength": 100,
+            "minLength": 6
+          }
+        },
+        "required": [
+          "cuit",
+          "email",
+          "nombre",
+          "password",
+          "provincia",
+          "username"
+        ]
+      },
+      "CompromisoRequest": {
+        "type": "object",
+        "properties": {
+          "emergenciaRef": {
+            "type": "string",
+            "example": "EMG-12",
+            "minLength": 1
+          },
+          "gravedad": {
+            "type": "string",
+            "enum": [
+              "BAJA",
+              "MEDIA",
+              "ALTA"
+            ],
+            "example": "ALTA"
+          },
+          "descripcion": {
+            "type": "string",
+            "example": "Inundaci\u00f3n en Bah\u00eda Blanca"
+          },
+          "ofertas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfertaRequest"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "emergenciaRef",
+          "gravedad",
+          "ofertas"
+        ]
+      },
+      "CompromisoResponse": {
+        "type": "object",
+        "properties": {
+          "emergenciaRef": {
+            "type": "string"
+          },
+          "estadoProyecto": {
+            "type": "string"
+          },
+          "creados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yaExistian": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "compromisos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompromisoDTO"
+            }
+          }
+        }
+      },
+      "ItemVerificacion": {
+        "type": "object",
+        "properties": {
+          "ofertaRef": {
+            "type": "string"
+          },
+          "cuit": {
+            "type": "string"
+          },
+          "tipoRecurso": {
+            "type": "string"
+          },
+          "cantidad": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "disponible": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "motivo": {
+            "type": "string"
+          }
+        }
+      },
+      "VerificacionResponse": {
+        "type": "object",
+        "properties": {
+          "emergenciaRef": {
+            "type": "string"
+          },
+          "factible": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ItemVerificacion"
+            }
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "bonita",
+            "minLength": 1
+          },
+          "password": {
+            "type": "string",
+            "example": "bonita123",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "password",
+          "username"
+        ]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "expiraEnSegundos": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "username": {
+            "type": "string"
+          },
+          "rol": {
+            "type": "string"
+          },
+          "ongCuit": {
+            "type": "string"
+          }
+        }
+      },
+      "CambioEstadoOngRequest": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "type": "string",
+            "enum": [
+              "PENDIENTE",
+              "HABILITADA",
+              "SUSPENDIDA"
+            ],
+            "example": "HABILITADA"
+          },
+          "motivo": {
+            "type": "string",
+            "example": "Documentaci\u00f3n verificada"
+          }
+        },
+        "required": [
+          "estado"
+        ]
+      },
+      "DisponibilidadDTO": {
+        "type": "object",
+        "properties": {
+          "tipoRecurso": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "unidad": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comprometido": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "disponible": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "porOng": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DisponibilidadOngDTO"
+            }
+          }
+        }
+      },
+      "DisponibilidadOngDTO": {
+        "type": "object",
+        "properties": {
+          "cuit": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comprometido": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "disponible": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ProyectoDTO": {
+        "type": "object",
+        "properties": {
+          "emergenciaRef": {
+            "type": "string"
+          },
+          "gravedad": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaInicio": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaCierre": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "compromisos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CompromisoDTO"
+            }
+          }
+        }
+      },
+      "OngDTO": {
+        "type": "object",
+        "properties": {
+          "cuit": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "provincia": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaAlta": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "certificacionesVigentes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "TipoRecursoDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "unidad": {
+            "type": "string"
+          },
+          "certificacionRequerida": {
+            "type": "string"
+          }
+        }
+      },
+      "CertificacionDTO": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "habilitaRecursos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

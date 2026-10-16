@@ -8,6 +8,9 @@ services:
       POSTGRES_DB: rescuesync
       POSTGRES_USER: rescuesync
       POSTGRES_PASSWORD: rescuesync
+      # Hora argentina para now() y lo que se ve por psql (los LocalDateTime ya los manda la app en GMT-3)
+      TZ: America/Argentina/Buenos_Aires
+      PGTZ: America/Argentina/Buenos_Aires
 
     ports:
       - "5433:5432"
@@ -24,12 +27,45 @@ services:
       POSTGRES_DB: sistemanacional
       POSTGRES_USER: sistemanacional
       POSTGRES_PASSWORD: sistemanacional
+      TZ: America/Argentina/Buenos_Aires
+      PGTZ: America/Argentina/Buenos_Aires
 
     ports:
       - "5434:5432"
 
     volumes:
       - postgres_nacional_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sistemanacional -d sistemanacional"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # API del Sistema Nacional (la misma imagen que corre en Render). Swagger: http://localhost:8090/swagger-ui.html
+  # Para desarrollar conviene correrla con ./mvnw spring-boot:run y levantar solo postgres-nacional.
+  sistema-nacional:
+    build: ./sistema-nacional
+    container_name: sistemanacional-api
+
+    environment:
+      DB_URL: jdbc:postgresql://postgres-nacional:5432/sistemanacional
+      DB_USER: sistemanacional
+      DB_PASSWORD: sistemanacional
+
+    ports:
+      - "8090:8090"
+
+    depends_on:
+      postgres-nacional:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8090/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      start_period: 40s
+      retries: 5
 
 volumes:
   postgres_data:
