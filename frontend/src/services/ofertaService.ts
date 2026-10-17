@@ -7,7 +7,12 @@ export interface Aporte {
   ongNombre: string;
   cantidad: number;
   estado: "PENDIENTE" | "CONFIRMADO" | "RECHAZADO" | "RETIRADO";
+  rolValidacion: RolValidacion | null;   // perfil del Sistema Nacional para esta ONG
+  cantidadValidada: number | null;
 }
+
+// Perfil que asigna el Sistema Nacional al validar
+export type RolValidacion = "PRINCIPAL" | "APOYO_SECUNDARIO" | "SIN_HABILITACION_VIGENTE";
 
 // Una oferta: individual (1 aporte) o consorcio (varios aportes) — OfertaDTO en Java
 export interface Oferta {
@@ -26,6 +31,11 @@ export interface Oferta {
   aportes: Aporte[];
   soyLider: boolean | null;    // solo viene cuando consulta una ONG
   miAporte: Aporte | null;     // el aporte de la ONG que consulta (si participa)
+  zonaAfectada: string;
+  rolValidacion: RolValidacion | null;          // null antes de la validación
+  cantidadValidada: number | null;
+  observacionesValidacion: string[];
+  resultado: "ADJUDICADA" | "NO_SELECCIONADA" | null;   // null antes de adjudicar
 }
 
 // Una línea del historial (trazabilidad)
@@ -52,7 +62,8 @@ export interface CoberturaLote {
   ofrecido: number;
   faltante: number;
   porcentaje: number;
-  cubierto: boolean;
+  cubierto: boolean;          // al menos una oferta cubre el lote sola
+  ofertasCompletas: number;   // ofertas que compiten por el lote
   ofertas: Oferta[];
 }
 

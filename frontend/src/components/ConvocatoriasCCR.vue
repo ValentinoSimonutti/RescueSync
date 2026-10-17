@@ -155,9 +155,9 @@ onUnmounted(() => {
                 <div>
                   <strong>{{ lote.recurso }}</strong>
                   <p>
-                    Ofrecido {{ lote.ofrecido }} de {{ lote.requerido }}
+                    Mejor oferta: {{ lote.ofrecido }} de {{ lote.requerido }}
                     <template v-if="lote.faltante > 0"> · faltan {{ lote.faltante }}</template>
-                    <template v-else> · cubierto</template>
+                    <template v-else> · cubierto ({{ lote.ofertasCompletas }} {{ lote.ofertasCompletas === 1 ? "oferta completa" : "ofertas completas" }})</template>
                   </p>
                 </div>
                 <div class="cobertura-mini">

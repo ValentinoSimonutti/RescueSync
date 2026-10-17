@@ -22,7 +22,12 @@ public record OfertaDTO(
         LocalDateTime fechaActualizacion,
         List<AporteDTO> aportes,
         Boolean soyLider,
-        AporteDTO miAporte
+        AporteDTO miAporte,
+        String zonaAfectada,              // de la emergencia (para los avisos a la ONG)
+        String rolValidacion,             // perfil del Sistema Nacional (null antes de validar)
+        Integer cantidadValidada,
+        List<String> observacionesValidacion,
+        String resultado                  // ADJUDICADA / NO_SELECCIONADA (null antes de adjudicar)
 ) {
     // ongId = ONG que consulta (null = coordinador / Bonita)
     public static OfertaDTO desde(Oferta o, Long ongId) {
@@ -42,7 +47,13 @@ public record OfertaDTO(
                 o.getFechaActualizacion(),
                 o.getAportes().stream().map(AporteDTO::desde).toList(),
                 ongId == null ? null : o.esLider(ongId),
-                mio
+                mio,
+                o.getLote().getEmergencia().getZonaAfectada(),
+                o.getRolValidacion() == null ? null : o.getRolValidacion().name(),
+                o.getCantidadValidada(),
+                o.getObservacionesValidacion() == null || o.getObservacionesValidacion().isBlank()
+                        ? List.of() : List.of(o.getObservacionesValidacion().split("\n")),
+                o.getResultado() == null ? null : o.getResultado().name()
         );
     }
 }

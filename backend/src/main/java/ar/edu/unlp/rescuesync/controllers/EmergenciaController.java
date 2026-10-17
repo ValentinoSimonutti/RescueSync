@@ -5,6 +5,9 @@ import ar.edu.unlp.rescuesync.auth.SesionActual;
 import ar.edu.unlp.rescuesync.auth.UsuarioLogueado;
 import ar.edu.unlp.rescuesync.service.EmergenciaService;
 import ar.edu.unlp.rescuesync.service.OfertaService;
+import ar.edu.unlp.rescuesync.service.AdjudicacionService;
+import ar.edu.unlp.rescuesync.dto.AdjudicacionDTO;
+import ar.edu.unlp.rescuesync.dto.AdjudicarDTO;
 import ar.edu.unlp.rescuesync.dto.CoberturaDTO;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
@@ -23,12 +26,14 @@ public class EmergenciaController {
 
     private final EmergenciaService emergenciaService;
     private final OfertaService ofertaService;     // para la cobertura de las convocatorias
+    private final AdjudicacionService adjudicacionService;
     private final SesionActual sesionActual;       // para saber quién está logueado
 
     public EmergenciaController(EmergenciaService emergenciaService, OfertaService ofertaService,
-                                SesionActual sesionActual) {
+                                AdjudicacionService adjudicacionService, SesionActual sesionActual) {
         this.emergenciaService = emergenciaService;
         this.ofertaService = ofertaService;
+        this.adjudicacionService = adjudicacionService;
         this.sesionActual = sesionActual;
     }
 
@@ -117,5 +122,25 @@ public class EmergenciaController {
         }
 
         return emergenciaService.consultarLotes(id, usuario);
+    }
+
+    // GET /api/emergencias/{id}/adjudicacion -> ofertas validadas que el municipio puede elegir, por lote
+    @GetMapping("/{id}/adjudicacion")
+    public AdjudicacionDTO opcionesAdjudicacion(@PathVariable Long id, HttpSession session) {
+        return adjudicacionService.opciones(id, municipio(session));
+    }
+
+    // POST /api/emergencias/{id}/adjudicacion -> adjudica una oferta por lote y completa la tarea en Bonita
+    @PostMapping("/{id}/adjudicacion")
+    public EmergenciaDTO adjudicar(@PathVariable Long id, @RequestBody AdjudicarDTO dto, HttpSession session) {
+        return adjudicacionService.adjudicar(id, dto, municipio(session));
+    }
+
+    private UsuarioLogueado municipio(HttpSession session) {
+        UsuarioLogueado usuario = sesionActual.obtener(session);
+        if (usuario.rol() != Rol.OPERADOR_MUNICIPAL) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el municipio puede adjudicar");
+        }
+        return usuario;
     }
 }

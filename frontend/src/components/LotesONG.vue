@@ -21,6 +21,9 @@ let activo = true;
 let reloj: ReturnType<typeof setInterval>;
 let refresco: ReturnType<typeof setInterval>;
 
+// Avisos de adjudicación: ofertas donde participa esta ONG que el municipio ya resolvió
+const resultados = computed(() => ofertas.value.filter(o => o.resultado && o.miAporte?.estado === "CONFIRMADO"));
+
 const vigentes = computed(() => convocatorias.value.filter(c => {
   const fin = cierreDe(c.emergencia);
   return !Number.isFinite(fin) || fin > ahora.value;
@@ -101,10 +104,24 @@ onUnmounted(() => {
       <button type="button" class="bandeja-actualizar" :disabled="actualizando" @click="cargar">Actualizar</button>
     </div>
     <p class="ong-ayuda">
-      Podés ofrecer todo o una parte de cada lote, sola o en consorcio con otras ONGs.
-      Hasta que cierre la ventana podés modificar tu aporte; al cierre se decide quién entrega.
+      Una oferta individual cubre el lote completo; para aportar una parte, armá un consorcio con otras ONGs.
+      Varias ofertas pueden competir por el mismo lote: al cierre, el municipio elige una.
     </p>
     <p v-if="error" class="emergencia-error" role="alert">{{ error }}</p>
+
+    <section v-if="resultados.length" class="ong-resultados" aria-labelledby="ong-resultados-titulo">
+      <h2 id="ong-resultados-titulo" class="ong-oferta-titulo">Resultados de adjudicación</h2>
+      <ul class="ong-aportes">
+        <li v-for="oferta in resultados" :key="oferta.id" :class="oferta.resultado === 'ADJUDICADA' ? 'ong-oferta-ok' : 'ong-ayuda'">
+          Emergencia #{{ oferta.emergenciaId }} · {{ oferta.zonaAfectada }} · {{ oferta.recurso }}:
+          <strong v-if="oferta.resultado === 'ADJUDICADA'">
+            tu oferta fue seleccionada como responsable{{ oferta.consorcio ? " (en consorcio)" : "" }}<template v-if="oferta.miAporte?.rolValidacion === 'APOYO_SECUNDARIO'">, con tu ONG como apoyo secundario</template>.
+          </strong>
+          <template v-else>el municipio eligió otra oferta.</template>
+        </li>
+      </ul>
+    </section>
+
     <p v-if="cargando" role="status">Cargando lotes...</p>
     <p v-else-if="!error && vigentes.length === 0" class="bandeja-vacia">No hay convocatorias vigentes disponibles.</p>
     <ul v-else class="bandeja-lista">

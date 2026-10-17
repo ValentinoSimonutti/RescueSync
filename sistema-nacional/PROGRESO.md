@@ -126,8 +126,15 @@ Plan aprobado el 16/10, en tres milestones:
   - Config `sistema-nacional.url/usuario/password` (env `SISTEMA_NACIONAL_*`). Por defecto apunta a Render; para la local, `SISTEMA_NACIONAL_URL=http://localhost:8090`.
   - `ONG.cuit` (seed y backfill por nombre para las bases existentes). `Lote` guarda `recurso` (el nombre para mostrar) y `recursoCodigo` (el código del catálogo); al publicar se valida el código contra el catálogo y el nombre sale de ahí. `LoteDTO` y `CoberturaLoteDTO` exponen `recursoCodigo`.
   - `GET /api/catalogo/tipos-recurso` (con sesión). En el front, `catalogoService.ts` y un select agrupado por categoría en `GenerarLotesForm`, que no deja repetir recursos.
-- **M4b:** endpoints para Bonita (`validacionRequest` armado en el GET de ofertas, POST de validaciones, avisos de compromiso y cierre, etiqueta del rol en el front).
-- **M4c:** scripts y guía de Bonita en `RescueSync/bonita/`, README.
+- Re-planificado el 17/10, ahora por etapa del proceso:
+- ✅ **M4b, validación y adjudicación** (17/10). Se probó de punta a punta en el navegador con Bonita: la emergencia #6 tuvo las dos ofertas validadas como PRINCIPAL, el municipio adjudicó y el caso siguió a "Monitorear estado de despliegue". Los conectores de "Evaluar Ofertas" están armados en Studio; los problemas de Studio están en `bonita/GUIA.md`.
+  - Bonita: `GET /api/bonita/emergencias/{id}/ofertas` devuelve `ConsolidadoBonitaDTO` con `validacionRequest` (solo ofertas completas, aportes confirmados por CUIT, refs `EMG-/OF-/LT-`). `POST /api/bonita/emergencias/{id}/validaciones` recibe la respuesta del SN, guarda `rolValidacion`/`cantidadValidada` en la oferta y en cada aporte, y devuelve `lotesCubiertos` con lo validado (es idempotente).
+  - Municipio: `GET`/`POST /api/emergencias/{id}/adjudicacion` (`AdjudicacionService`). Ve solo las ofertas adjudicables (PRINCIPAL o APOYO con cantidad validada ≥ lote) y elige una por lote. Las demás quedan NO_SELECCIONADA, la emergencia pasa a ADJUDICADA y se completa "Adjudicar y notificar" en Bonita. Front: botón **Adjudicar** en Mis Emergencias y `AdjudicarEmergencia.vue`.
+  - ONG: "Resultados de adjudicación" en `LotesONG` (seleccionada como responsable / no seleccionada).
+  - SN: `ValidacionRequest.ofertas` acepta una lista vacía (antes era `@NotEmpty`), para que Bonita no falle si no hubo ofertas completas. Hay que redeployar en Render.
+  - Guía de los conectores de "Evaluar Ofertas": `RescueSync/bonita/GUIA.md`.
+- **M4c, compromiso, ejecución y cierre:** "Comprometer Recursos" (con el 409), "Monitorear estado de despliegue" (CCR), "Ejecutar y marcar tareas finalizadas" (ONG), finalización por ONG y cierre en el SN.
+- **M4d:** README y `.bos` final exportado a `RescueSync/bonita/`.
 
 - **Backend local:** agregar `ONG.cuit` (seed con los CUIT de arriba). `Lote.recurso` pasa a guardar el código del catálogo. Sumar un endpoint proxy `GET /api/catalogo/tipos-recurso`, que llama a la API con la cuenta `bonita` y cachea.
 - **Front:** en `GenerarLotesForm.vue`, un select de tipos de recurso.
@@ -156,6 +163,6 @@ Plan aprobado el 16/10, en tres milestones:
 - **17/10, flujo de prueba de M4a:** el `.bos` venía de Studio 10.4. Se armó `rescuesync_9.0.bos` (MANIFEST, pom y `bonitaModelVersion` bajados) y se importó en Studio 2023.2 (9.0). El Tomcat de Studio quedó fijo en el 8080. Hay que levantar el backend **antes** que Studio, porque si no el UI Designer agarra el 8081.
   - Fixes de front: el select de lotes deshabilita los recursos que ya se eligieron en otro lote, y el consorcio no se ofrece si el lote pide 1 unidad.
   - Render no respondió el health check: hay que revisar los logs. Mientras tanto, el backend usa la API local (`SISTEMA_NACIONAL_URL=http://localhost:8090`).
-- **Tope por lote (17/10, decidido por ahora y tratado como bug):** sumando todas las ofertas activas, lo confirmado no puede pasar lo que pide el lote. Para sumar recursos a la oferta de otra ONG hay que armar un consorcio. Backend: `OfertaService` bloquea el lote (`findByIdParaOfertar`, FOR UPDATE) y limita al faltante al crear y al aceptar o subir un aporte; bajar el aporte siempre se puede. En el front, `OfertaLote` usa `cobertura.faltante` como tope y muestra "ya está cubierto". Queda para revisar con el grupo al final.
+- **Reglas de ofertas (17/10, definidas con el usuario):** las ofertas de distintas ONGs **compiten**, no se suman. Una oferta individual tiene que ser por el **total del lote**; para aportar menos hay que armar un **consorcio** (la líder pone como mucho total − 1). Un lote está cubierto si al menos una oferta sola (individual o consorcio) llega al total. `CoberturaLoteDTO.ofrecido` es la mejor oferta y `ofertasCompletas` dice cuántas compiten. En "Adjudicar y notificar", **el municipio elige una oferta por lote**. (El 17/10 hubo un tope "por suma del lote" que se revirtió.)
 - **Mensajes de error:** en Boot 4 la propiedad es `spring.web.error.include-message`; `server.error.*` ya no aplica. Por eso el front mostraba "Error HTTP: 400" sin el detalle.
-- **Falta antes del flujo completo:** el municipio no tiene bandeja. "Adjudicar y notificar" queda `ready` en Bonita y no se ve en el front. Va en M4b.
+- ~~El municipio no tiene bandeja~~: resuelto en M4b ("Adjudicar" en Mis Emergencias).

@@ -74,7 +74,7 @@ onUnmounted(() => { activo = false; });
           <h2>{{ lote.recurso }}</h2>
           <dl class="resolver-cantidades">
             <div><dt>Necesario</dt><dd>{{ lote.requerido }}</dd></div>
-            <div><dt>Ofrecido</dt><dd>{{ lote.ofrecido }}</dd></div>
+            <div><dt>Mejor oferta</dt><dd>{{ lote.ofrecido }}</dd></div>
             <div><dt>Faltante</dt><dd>{{ lote.faltante }}</dd></div>
           </dl>
           <p v-if="!lote.ofertas.length" class="ong-ayuda">No hay ofertas disponibles para este lote.</p>

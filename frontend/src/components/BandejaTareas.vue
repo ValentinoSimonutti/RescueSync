@@ -143,7 +143,7 @@ onUnmounted(() => {
         <div v-if="esVencida(tarea)" v-show="ampliadas.has(tarea.tareaId)" :id="`recursos-tarea-${tarea.tareaId}`" class="tarea-cobertura">
           <table v-if="coberturas[tarea.emergencia.id]?.lotes.length">
             <caption class="tarea-cobertura-titulo">Resumen de necesidades</caption>
-            <thead><tr><th scope="col">Recurso</th><th scope="col">Solicitado</th><th scope="col">Ofrecido</th><th scope="col">Faltante</th></tr></thead>
+            <thead><tr><th scope="col">Recurso</th><th scope="col">Solicitado</th><th scope="col">Mejor oferta</th><th scope="col">Faltante</th></tr></thead>
             <tbody>
               <tr v-for="lote in coberturas[tarea.emergencia.id]?.lotes" :key="lote.loteId">
                 <th scope="row">{{ lote.recurso }}</th>

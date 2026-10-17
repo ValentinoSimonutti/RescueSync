@@ -1268,8 +1268,7 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/OfertaRequest"
-            },
-            "minItems": 1
+            }
           }
         },
         "required": [

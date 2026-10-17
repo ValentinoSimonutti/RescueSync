@@ -2,6 +2,8 @@ package ar.edu.unlp.rescuesync.entity;
 
 import ar.edu.unlp.rescuesync.entity.enums.EstadoAporte;
 import ar.edu.unlp.rescuesync.entity.enums.EstadoOferta;
+import ar.edu.unlp.rescuesync.entity.enums.ResultadoOferta;
+import ar.edu.unlp.rescuesync.entity.enums.RolValidacion;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -41,6 +43,17 @@ public class Oferta {
 
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
+
+    // Validación del Sistema Nacional (null hasta que Bonita manda el resultado)
+    @Enumerated(EnumType.STRING)
+    private RolValidacion rolValidacion;
+    private Integer cantidadValidada;
+    @Column(length = 2000)
+    private String observacionesValidacion;
+
+    // Adjudicación del municipio (null hasta que adjudica)
+    @Enumerated(EnumType.STRING)
+    private ResultadoOferta resultado;
 
     // Qué pone cada ONG. cascade: al guardar la oferta se guardan sus aportes
     @OneToMany(mappedBy = "oferta", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -93,6 +106,19 @@ public class Oferta {
                 .count() > 1;
     }
 
+    public void registrarValidacion(RolValidacion rol, int cantidadValidada, String observaciones) {
+        this.rolValidacion = rol;
+        this.cantidadValidada = cantidadValidada;
+        this.observacionesValidacion = observaciones;
+    }
+
+    // El municipio solo ve (y elige) las ofertas validadas que cubren el lote completo
+    public boolean esAdjudicable() {
+        return estado == EstadoOferta.ACTIVA
+                && rolValidacion != null && rolValidacion != RolValidacion.SIN_HABILITACION_VIGENTE
+                && cantidadValidada != null && cantidadValidada >= lote.getCantidad();
+    }
+
     public Long getId() { return id; }
     public int getCantidad() { return cantidad; }
     public String getRecurso() { return recurso; }
@@ -104,4 +130,9 @@ public class Oferta {
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public List<Aporte> getAportes() { return aportes; }
+    public RolValidacion getRolValidacion() { return rolValidacion; }
+    public Integer getCantidadValidada() { return cantidadValidada; }
+    public String getObservacionesValidacion() { return observacionesValidacion; }
+    public ResultadoOferta getResultado() { return resultado; }
+    public void setResultado(ResultadoOferta resultado) { this.resultado = resultado; }
 }

@@ -741,3 +741,19 @@ body:has(.modal-salir[open]) { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .detalle-flecha svg { transition: none; }
 }
+
+/* Municipio: Adjudicar y notificar */
+.mis-emergencias-accion { display: flex; align-items: center; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; margin: 0; padding: 16px 24px; color: var(--text); font-size: 13px; background: #fffaf6; border-top: 1px solid #e8edf3; }
+.mis-emergencias-accion.bloqueada { color: var(--error); background: #fff6f6; }
+@media (max-width: 600px) { .mis-emergencias-accion { padding: 16px 18px; } .mis-emergencias-accion .bandeja-boton { width: 100%; } }
+.adjudicar-lote { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin: 14px 0 0; min-width: 0; }
+.adjudicar-lote[aria-invalid="true"] { border-color: var(--error); }
+.adjudicar-lote legend { font-weight: 600; padding: 0 6px; color: var(--text-h); }
+.adjudicar-opcion { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+.adjudicar-opcion + .adjudicar-opcion { border-top: 1px solid var(--border); }
+.adjudicar-opcion input { margin-top: 4px; }
+.adjudicar-opcion-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.adjudicar-rol { align-self: flex-start; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: #e8f5e9; color: #2e7d32; }
+.adjudicar-rol.apoyo { background: #fff3e0; color: #b45309; }
+.adjudicar-observaciones { color: var(--text); }
+.ong-resultados { margin: 12px 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; }

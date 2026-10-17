@@ -8,7 +8,9 @@ import BandejaTareas from "./components/BandejaTareas.vue";
 import GenerarLotesForm from "./components/GenerarLotesForm.vue";
 import ResolverConvocatoria from "./components/ResolverConvocatoria.vue";
 import ConvocatoriasCCR from "./components/ConvocatoriasCCR.vue";
+import AdjudicarEmergencia from "./components/AdjudicarEmergencia.vue";
 import type { Tarea } from "./services/tareaService";
+import type { Emergencia } from "./services/emergenciaService";
 import { logout, usuarioActual, type Usuario } from "./services/authService";
 
 const modalSalir = ref<HTMLDialogElement | null>(null);
@@ -48,7 +50,21 @@ function cambiarPantallaCoordinador(pantalla: "tareas" | "abiertas" | "cubiertas
 
 function cambiarPantallaMunicipio(pantalla: "registrar" | "misEmergencias") {
   mensajeMunicipio.value = "";
+  emergenciaAdjudicar.value = null;
   pantallaMunicipio.value = pantalla;
+}
+
+// Municipio: emergencia abierta en "Adjudicar y notificar" (null = lista de emergencias)
+const emergenciaAdjudicar = ref<Emergencia | null>(null);
+
+function abrirAdjudicacion(emergencia: Emergencia) {
+  mensajeMunicipio.value = "";
+  emergenciaAdjudicar.value = emergencia;
+}
+
+function alAdjudicar() {
+  mensajeMunicipio.value = "Adjudicación registrada. Se notificó a las ONGs.";
+  emergenciaAdjudicar.value = null;
 }
 
 function alRegistrarEmergencia() {
@@ -75,6 +91,7 @@ function alLoguearse(u: Usuario) {
   pantallaMunicipio.value = "registrar";
   pantallaCoordinador.value = "tareas";
   tareaSeleccionada.value = null;
+  emergenciaAdjudicar.value = null;
   usuario.value = u;
 }
 
@@ -89,6 +106,7 @@ async function salir() {
     mensajeMunicipio.value = "";
     mensajeCoordinador.value = "";
     tareaSeleccionada.value = null;
+    emergenciaAdjudicar.value = null;
     pantallaMunicipio.value = "registrar";
     pantallaCoordinador.value = "tareas";
   } catch (e) {
@@ -177,7 +195,11 @@ function mostrarRol(rol: Usuario["rol"]) {
     <!-- Municipio: alta y consulta de sus emergencias -->
     <template v-if="usuario.rol === 'OPERADOR_MUNICIPAL'">
       <EmergenciaForm v-show="pantallaMunicipio === 'registrar'" @registrada="alRegistrarEmergencia" />
-      <MisEmergencias v-if="pantallaMunicipio === 'misEmergencias'" :mensaje="mensajeMunicipio" />
+      <AdjudicarEmergencia v-if="pantallaMunicipio === 'misEmergencias' && emergenciaAdjudicar"
+        :key="emergenciaAdjudicar.id" :emergencia="emergenciaAdjudicar"
+        @volver="emergenciaAdjudicar = null" @adjudicado="alAdjudicar" />
+      <MisEmergencias v-else-if="pantallaMunicipio === 'misEmergencias'" :mensaje="mensajeMunicipio"
+        @adjudicar="abrirAdjudicacion" />
     </template>
 
     <!-- Coordinador: su bandeja de tareas (lo que Bonita dice que le toca) -->
