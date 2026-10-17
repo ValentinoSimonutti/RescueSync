@@ -139,6 +139,23 @@ Plan aprobado el 16/10, en tres milestones:
   - Exportar el `.bos` a `RescueSync/bonita/`.
 - **README** de `sistema-nacional` y del repo raíz.
 
+## Al retomar (dejado el 16/10)
+1. **Probar M4a en el navegador** (no se llegó a probar):
+   - `municipio1` crea una emergencia.
+   - `coord1` abre "Generar lotes": select del catálogo, aviso de recurso repetido, nombres en el modal, publicar.
+   - `ong1` ve los lotes y hace una oferta.
+   - Opcional: `select id, recurso, recurso_codigo from lote` para ver el código guardado.
+2. Puertos: **Bonita 8080, backend 8081, front 5173**. El 16/10 se había cambiado `server.port` a 8080 por error y se volvió a 8081. Si el login da "Error HTTP: 502" sin mensaje, es Vite sin backend en el 8081.
+3. Las contraseñas de los usuarios locales son las de la organización de Bonita (el backend hace login contra Bonita).
+4. El usuario va a traer el archivo de Bonita (`.bos`) para orquestar. Con eso se sigue con **M4b** (endpoints y DTOs para Bonita) y **M4c** (conectores y scripts).
+5. Commits: los hace el usuario (M4a sin commitear todavía).
+
 ## Pendientes y notas
 - `ddl-auto: update` + `DataLoader`, igual que el backend. Si cambia el modelo, conviene borrar el volumen `postgres_nacional_data`.
 - No hay commits todavía: los hacen ustedes.
+- **17/10, flujo de prueba de M4a:** el `.bos` venía de Studio 10.4. Se armó `rescuesync_9.0.bos` (MANIFEST, pom y `bonitaModelVersion` bajados) y se importó en Studio 2023.2 (9.0). El Tomcat de Studio quedó fijo en el 8080. Hay que levantar el backend **antes** que Studio, porque si no el UI Designer agarra el 8081.
+  - Fixes de front: el select de lotes deshabilita los recursos que ya se eligieron en otro lote, y el consorcio no se ofrece si el lote pide 1 unidad.
+  - Render no respondió el health check: hay que revisar los logs. Mientras tanto, el backend usa la API local (`SISTEMA_NACIONAL_URL=http://localhost:8090`).
+- **Tope por lote (17/10, decidido por ahora y tratado como bug):** sumando todas las ofertas activas, lo confirmado no puede pasar lo que pide el lote. Para sumar recursos a la oferta de otra ONG hay que armar un consorcio. Backend: `OfertaService` bloquea el lote (`findByIdParaOfertar`, FOR UPDATE) y limita al faltante al crear y al aceptar o subir un aporte; bajar el aporte siempre se puede. En el front, `OfertaLote` usa `cobertura.faltante` como tope y muestra "ya está cubierto". Queda para revisar con el grupo al final.
+- **Mensajes de error:** en Boot 4 la propiedad es `spring.web.error.include-message`; `server.error.*` ya no aplica. Por eso el front mostraba "Error HTTP: 400" sin el detalle.
+- **Falta antes del flujo completo:** el municipio no tiene bandeja. "Adjudicar y notificar" queda `ready` en Bonita y no se ve en el front. Va en M4b.

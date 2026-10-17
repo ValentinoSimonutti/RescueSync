@@ -48,18 +48,21 @@ const situacion = computed<"libre" | "invitada" | "participa">(() => {
   return "libre";
 });
 
-// El aporte se limita dentro de esta oferta, en función de la cantidad real del lote.
+// Entre todas las ofertas activas no se puede pasar lo que pide el lote.
+// Lo que falta cubrir es el tope para una oferta nueva.
+const faltante = computed(() => props.cobertura?.faltante ?? props.lote.cantidad);
+
+// Mi aporte en una oferta existente: lo que pide el lote menos lo de las otras ONGs
+// de esta oferta y lo de las otras ofertas. Bajar el aporte siempre se puede.
 const maximo = computed(() => {
-  if (!oferta.value) return props.lote.cantidad;
-  const ofrecidoPorOtros = oferta.value.aportes
-    .filter(a => a.ongId !== oferta.value!.miAporte?.ongId && a.estado === "CONFIRMADO")
-    .reduce((total, a) => total + a.cantidad, 0);
-  return Math.max(0, oferta.value.cantidadRequerida - ofrecidoPorOtros);
+  if (!oferta.value) return faltante.value;
+  const miAporte = oferta.value.miAporte?.estado === "CONFIRMADO" ? oferta.value.miAporte.cantidad : 0;
+  const deOtrasOfertas = props.cobertura ? props.cobertura.ofrecido - oferta.value.total : 0;
+  return Math.max(miAporte, oferta.value.cantidadRequerida - deOtrasOfertas - (oferta.value.total - miAporte));
 });
 
-// El líder deja al menos una unidad para las invitadas. Este tope no depende de
-// las ofertas que hayan presentado otras ONGs para el lote.
-const maximoLiderConsorcio = computed(() => Math.max(0, props.lote.cantidad - 1));
+// El líder deja al menos una unidad de lo que falta para las invitadas.
+const maximoLiderConsorcio = computed(() => Math.max(0, faltante.value - 1));
 
 // Solo se puede invitar a ONGs que todavía no tengan una participación viva en este lote.
 const ongsInvitables = computed(() => {
@@ -81,8 +84,7 @@ function reiniciarCantidad() {
   } else if (situacion.value === "invitada") {
     cantidad.value = maximo.value;
   } else {
-    const faltante = props.cobertura?.faltante ?? 0;
-    cantidad.value = faltante > 0 ? Math.min(faltante, props.lote.cantidad) : props.lote.cantidad;
+    cantidad.value = Math.max(1, faltante.value);
   }
 }
 reiniciarCantidad();
@@ -153,7 +155,7 @@ async function ejecutar(accion: () => Promise<unknown>, exito: string): Promise<
 
 function ofrecer() {
   const consorcio = invitadas.value.length > 0;
-  const maximoOferta = consorcio ? maximoLiderConsorcio.value : props.lote.cantidad;
+  const maximoOferta = consorcio ? maximoLiderConsorcio.value : faltante.value;
   const cantidadOferta = consorcio ? cantidadConsorcio.value : cantidad.value;
   if (!cantidadValida(cantidadOferta, maximoOferta)) return;
   void ejecutar(
@@ -242,17 +244,19 @@ async function confirmarRetiro() {
 
     <!-- 1. No participa: ofrecer sola o en consorcio -->
     <div v-if="situacion === 'libre'" class="ong-oferta">
-      <template v-if="!creandoConsorcio">
+      <p v-if="faltante < 1" class="ong-ayuda">Este lote ya está cubierto por otras ofertas.</p>
+      <template v-else-if="!creandoConsorcio">
         <div class="ong-oferta-fila">
           <label class="ong-oferta-campo">
             <span>Puedo aportar</span>
-            <input v-model.number="cantidad" type="number" min="1" :max="lote.cantidad" :disabled="enviando" />
+            <input v-model.number="cantidad" type="number" min="1" :max="faltante" :disabled="enviando" />
           </label>
           <button type="button" class="btn-ingresar bandeja-boton" :disabled="enviando" @click="ofrecer">
             {{ enviando ? "Enviando..." : "Ofrecer ayuda" }}
           </button>
         </div>
-        <details v-if="ongs.length" class="ong-consorcio" @toggle="iniciarConfiguracionConsorcio">
+        <!-- Un consorcio necesita que falten al menos 2 unidades: el líder deja una para las invitadas -->
+        <details v-if="ongs.length && faltante > 1" class="ong-consorcio" @toggle="iniciarConfiguracionConsorcio">
           <summary>Ofertar en conjunto con otras ONGs (consorcio)</summary>
           <p v-if="!ongsInvitables.length" class="ong-ayuda">Las otras ONGs ya participan en ofertas activas para este lote.</p>
         </details>
@@ -265,11 +269,10 @@ async function confirmarRetiro() {
           <input v-model.number="cantidadConsorcio" type="number" min="1" :max="maximoLiderConsorcio" :disabled="enviando || maximoLiderConsorcio < 1" />
         </label>
         </div>
-        <p class="ong-ayuda">Elegí a quién invitar. Cada ONG invitada confirma su aporte al aceptar. Como líder, podés aportar hasta {{ maximoLiderConsorcio }}; el tope se calcula sobre este lote y no baja por otras ofertas.</p>
+        <p class="ong-ayuda">Elegí a quién invitar. Cada ONG invitada confirma su aporte al aceptar. Como líder, podés aportar hasta {{ maximoLiderConsorcio }}: el resto de lo que falta queda para las invitadas.</p>
         <label v-for="o in ongsInvitables" :key="o.id" class="ong-consorcio-opcion">
           <input v-model="invitadas" type="checkbox" :value="o.id" :disabled="enviando || maximoLiderConsorcio < 1" /> {{ o.nombre }}
         </label>
-        <p v-if="maximoLiderConsorcio < 1" class="ong-ayuda">El lote debe pedir al menos 2 recursos para que el líder pueda reservar uno para las invitadas.</p>
         <div class="ong-oferta-fila">
           <button type="button" class="btn-ingresar bandeja-boton" :disabled="enviando || invitadas.length === 0 || maximoLiderConsorcio < 1" @click="ofrecer">
             {{ enviando ? "Enviando..." : "Crear consorcio" }}

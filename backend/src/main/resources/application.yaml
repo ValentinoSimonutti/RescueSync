@@ -12,14 +12,17 @@ spring:
       ddl-auto: update
     show-sql: true
 
+  # Manda el mensaje de error al front (ej: "Podés ofrecer hasta 2"). En Boot 4 ya no es server.error
+  web:
+    error:
+      include-message: always
+
 logging:
   level:
     org.springframework.web: DEBUG
 
 server:
   port: 8081
-  error:
-    include-message: always   # manda el mensaje de error al front (ej: 401/403 del login)
 bonita:
   url: http://localhost:8080/bonita
   process-name: RescueSync

@@ -23,6 +23,8 @@ public class OfertaService {
 
     // Participaciones "vivas": las que cuentan como que la ONG está en la oferta
     private static final List<EstadoAporte> VIVOS = List.of(EstadoAporte.PENDIENTE, EstadoAporte.CONFIRMADO);
+    // Id que no existe, para sumar todas las ofertas del lote al crear una nueva
+    private static final long SIN_OFERTA = -1L;
 
     private final OfertaRepository ofertaRepository;
     private final AporteRepository aporteRepository;
@@ -56,7 +58,7 @@ public class OfertaService {
         if (dto.getLoteId() == null) {
             throw error(HttpStatus.BAD_REQUEST, "Falta el lote");
         }
-        Lote lote = loteRepository.findById(dto.getLoteId())
+        Lote lote = loteRepository.findByIdParaOfertar(dto.getLoteId())
                 .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "No existe el lote " + dto.getLoteId()));
 
         validarVentanaAbierta(lote.getEmergencia());
@@ -67,10 +69,24 @@ public class OfertaService {
                 .filter(Objects::nonNull)
                 .anyMatch(id -> !id.equals(ong.getId()));
 
-        if (esConsorcio && dto.getCantidad() >= lote.getCantidad()) {
+        // Entre todas las ofertas activas no se puede pasar lo que pide el lote:
+        // para sumar recursos a lo que ofrece otra ONG hay que hacerlo en consorcio
+        int faltante = lote.getCantidad() - ofertaRepository.ofrecidoEnLote(lote.getId(), SIN_OFERTA);
+        if (faltante < 1) {
+            throw error(HttpStatus.CONFLICT, "El lote ya está cubierto por otras ofertas.");
+        }
+        if (esConsorcio && faltante < 2) {
             throw error(HttpStatus.BAD_REQUEST,
-                    "En un consorcio la líder puede aportar hasta " + (lote.getCantidad() - 1)
+                    "Falta 1 recurso para cubrir el lote: no alcanza para un consorcio, ofrecelo de forma individual.");
+        }
+        if (esConsorcio && dto.getCantidad() >= faltante) {
+            throw error(HttpStatus.BAD_REQUEST,
+                    "En un consorcio la líder puede aportar hasta " + (faltante - 1)
                             + " para dejar recursos a las ONGs invitadas.");
+        }
+        if (dto.getCantidad() > faltante) {
+            throw error(HttpStatus.BAD_REQUEST,
+                    "Para cubrir el lote faltan " + faltante + ". Podés ofrecer hasta " + faltante + ".");
         }
 
         // Una ONG solo puede participar en una oferta activa para este lote.
@@ -117,6 +133,7 @@ public class OfertaService {
     public OfertaDTO actualizarAporte(Long ofertaId, int cantidad, UsuarioLogueado usuario) {
 
         ONG ong = ongDe(usuario);
+        bloquearLoteDe(ofertaId);
         Oferta oferta = ofertaActiva(ofertaId);
         validarVentanaAbierta(oferta.getLote().getEmergencia());
 
@@ -134,6 +151,15 @@ public class OfertaService {
         if (deLasDemas + cantidad > requerido) {
             throw error(HttpStatus.BAD_REQUEST, "Con ese aporte la oferta sumaría " + (deLasDemas + cantidad)
                     + " y el lote pide " + requerido + ". Podés aportar hasta " + (requerido - deLasDemas) + ".");
+        }
+
+        // Tampoco se puede pasar el lote sumando las otras ofertas. Bajar el aporte siempre se puede.
+        int actual = aporte.getEstado() == EstadoAporte.CONFIRMADO ? aporte.getCantidad() : 0;
+        int disponible = requerido - ofertaRepository.ofrecidoEnLote(oferta.getLote().getId(), oferta.getId()) - deLasDemas;
+        if (cantidad > actual && cantidad > disponible) {
+            throw error(HttpStatus.BAD_REQUEST, disponible < 1
+                    ? "El lote ya está cubierto por otras ofertas."
+                    : "Con las otras ofertas el lote quedaría por encima de lo pedido. Podés aportar hasta " + disponible + ".");
         }
 
         String accion = aporte.getEstado() == EstadoAporte.PENDIENTE
@@ -157,6 +183,7 @@ public class OfertaService {
     public OfertaDTO retirar(Long ofertaId, UsuarioLogueado usuario) {
 
         ONG ong = ongDe(usuario);
+        bloquearLoteDe(ofertaId);
         Oferta oferta = ofertaActiva(ofertaId);
         validarVentanaAbierta(oferta.getLote().getEmergencia());
 
@@ -221,7 +248,7 @@ public class OfertaService {
 
     // ========================================================================
     // Cobertura: cuánto se ofreció por lote. La usan el coordinador y Bonita.
-    // Las ONGs pueden ofertar aunque un lote ya esté cubierto: la elección se hace después del cierre.
+    // Entre todas las ofertas activas de un lote no se supera lo que pide (ver crearOferta).
     // ========================================================================
     @Transactional(readOnly = true)
     public CoberturaDTO cobertura(Long emergenciaId) {
@@ -273,6 +300,13 @@ public class OfertaService {
         }
         return ongRepository.findById(usuario.organizacionId())
                 .orElseThrow(() -> error(HttpStatus.FORBIDDEN, "El usuario no pertenece a una ONG"));
+    }
+
+    // Las ofertas de un lote se crean y modifican de a una: se bloquea el lote antes de leer la oferta
+    private void bloquearLoteDe(Long ofertaId) {
+        ofertaRepository.findLoteIdByOfertaId(ofertaId)
+                .flatMap(loteRepository::findByIdParaOfertar)
+                .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "No existe la oferta " + ofertaId));
     }
 
     private Oferta ofertaActiva(Long ofertaId) {

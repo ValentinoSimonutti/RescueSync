@@ -24,6 +24,8 @@ const catalogo = ref<TipoRecurso[]>([]);
 const cargandoCatalogo = ref(false);
 const errorCatalogo = ref("");
 const nombreRecurso = (codigo: string) => catalogo.value.find(t => t.codigo === codigo)?.nombre ?? codigo;
+// Un recurso elegido en otro lote no se puede volver a elegir
+const usadoEnOtroLote = (codigo: string, indice: number) => lotes.value.some((lote, i) => i !== indice && lote.recursoCodigo === codigo);
 
 // Agrupados por categoría para los <optgroup>
 const categorias = computed(() => {
@@ -156,8 +158,9 @@ async function publicar() {
           :aria-describedby="intentoPublicar && erroresLotes[i]?.recurso ? `error-recurso-${i}` : undefined">
           <option value="" disabled>{{ cargandoCatalogo ? "Cargando catálogo..." : "Elegí un recurso" }}</option>
           <optgroup v-for="grupo in categorias" :key="grupo.categoria" :label="capitalizar(grupo.categoria)">
-            <option v-for="tipo in grupo.tipos" :key="tipo.codigo" :value="tipo.codigo">
-              {{ tipo.nombre }} ({{ tipo.unidad }})
+            <option v-for="tipo in grupo.tipos" :key="tipo.codigo" :value="tipo.codigo"
+              :disabled="usadoEnOtroLote(tipo.codigo, i)">
+              {{ tipo.nombre }} ({{ tipo.unidad }}){{ usadoEnOtroLote(tipo.codigo, i) ? " · ya está en otro lote" : "" }}
             </option>
           </optgroup>
         </select>
