@@ -129,8 +129,9 @@ onUnmounted(() => {
         </div>
         <div v-if="esVencida(tarea)" class="detalle-resumen">
           <p v-if="coberturas[tarea.emergencia.id]?.lotes.length">
-            {{ coberturas[tarea.emergencia.id]?.lotes.filter(l => !l.cubierto).length }} de
+            {{ coberturas[tarea.emergencia.id]?.lotes.filter(l => l.validado !== null ? !l.habilitado : !l.cubierto).length }} de
             {{ coberturas[tarea.emergencia.id]?.lotes.length }} lotes sin cubrir por completo
+            <template v-if="coberturas[tarea.emergencia.id]?.lotes.some(l => l.validado !== null)">según la validación del Sistema Nacional</template>
           </p>
           <p v-else>{{ coberturas[tarea.emergencia.id] ? "No hay lotes disponibles." : "Detalle de necesidades no disponible." }}</p>
           <button type="button" class="detalle-flecha" :aria-expanded="ampliadas.has(tarea.tareaId)"
@@ -143,12 +144,13 @@ onUnmounted(() => {
         <div v-if="esVencida(tarea)" v-show="ampliadas.has(tarea.tareaId)" :id="`recursos-tarea-${tarea.tareaId}`" class="tarea-cobertura">
           <table v-if="coberturas[tarea.emergencia.id]?.lotes.length">
             <caption class="tarea-cobertura-titulo">Resumen de necesidades</caption>
-            <thead><tr><th scope="col">Recurso</th><th scope="col">Solicitado</th><th scope="col">Mejor oferta</th><th scope="col">Faltante</th></tr></thead>
+            <thead><tr><th scope="col">Recurso</th><th scope="col">Solicitado</th><th scope="col">Mejor oferta</th><th scope="col">Faltante</th><th scope="col">Validado SN</th></tr></thead>
             <tbody>
               <tr v-for="lote in coberturas[tarea.emergencia.id]?.lotes" :key="lote.loteId">
                 <th scope="row">{{ lote.recurso }}</th>
                 <td>{{ lote.requerido }}</td><td>{{ lote.ofrecido }}</td>
                 <td :class="{ 'tarea-faltante': lote.faltante > 0 }">{{ lote.faltante }}</td>
+                <td :class="{ 'tarea-faltante': lote.validado !== null && !lote.habilitado }">{{ lote.validado ?? "-" }}</td>
               </tr>
             </tbody>
           </table>
@@ -160,7 +162,8 @@ onUnmounted(() => {
             <span>· Emergencia #{{ tarea.emergencia.id }}</span>
           </span>
           <button type="button" class="btn-ingresar bandeja-boton" @click="$emit('seleccionar', tarea)">
-            {{ tarea.nombreTarea === "Generar lotes" ? "Generar lote" : "Resolver" }}
+            {{ tarea.nombreTarea === "Generar lotes" ? "Generar lote"
+              : tarea.nombreTarea === "Monitorear estado de despliegue" ? "Revisar despliegue" : "Resolver" }}
           </button>
         </div>
       </li>

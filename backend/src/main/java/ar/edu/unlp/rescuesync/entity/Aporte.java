@@ -33,6 +33,9 @@ public class Aporte {
     private RolValidacion rolValidacion;
     private Integer cantidadValidada;
 
+    // Cuándo la ONG marcó sus actividades como finalizadas (solo en ofertas adjudicadas)
+    private LocalDateTime fechaFinalizacion;
+
     protected Aporte() {
     }
 
@@ -63,4 +66,6 @@ public class Aporte {
     public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
     public RolValidacion getRolValidacion() { return rolValidacion; }
     public Integer getCantidadValidada() { return cantidadValidada; }
+    public LocalDateTime getFechaFinalizacion() { return fechaFinalizacion; }
+    public void finalizar() { this.fechaFinalizacion = LocalDateTime.now(); }
 }

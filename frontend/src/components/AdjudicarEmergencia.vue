@@ -15,6 +15,7 @@ const emit = defineEmits<{
 }>();
 
 const lotes = ref<LoteAdjudicable[]>([]);
+const avisoCompromiso = ref<string | null>(null);   // si el SN rechazó un compromiso anterior
 const elegidas = ref<Record<number, number>>({});   // loteId -> ofertaId
 const cargando = ref(true);
 const enviando = ref(false);
@@ -37,6 +38,7 @@ async function cargar() {
   try {
     const datos = await opcionesAdjudicacion(props.emergencia.id);
     lotes.value = datos.lotes;
+    avisoCompromiso.value = datos.emergencia.avisoCompromiso;
     // Si un lote tiene una sola opción, ya queda elegida
     elegidas.value = Object.fromEntries(datos.lotes
       .filter(l => l.ofertas.length === 1)
@@ -98,6 +100,7 @@ async function confirmar() {
     </p>
 
     <template v-else>
+      <p v-if="avisoCompromiso" class="emergencia-error" role="alert">{{ avisoCompromiso }}</p>
       <p v-if="lotesSinOpciones.length" class="emergencia-error" role="alert">
         No se puede adjudicar: {{ lotesSinOpciones.map(l => l.recurso).join(", ") }}
         {{ lotesSinOpciones.length === 1 ? "no tiene" : "no tienen" }} ofertas validadas que cubran el lote.

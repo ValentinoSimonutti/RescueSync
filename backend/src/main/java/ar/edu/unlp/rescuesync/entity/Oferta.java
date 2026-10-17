@@ -51,6 +51,11 @@ public class Oferta {
     @Column(length = 2000)
     private String observacionesValidacion;
 
+    // Si el Sistema Nacional no pudo comprometer los recursos de esta oferta (409), el motivo.
+    // Una oferta rechazada ya no se puede volver a elegir.
+    @Column(length = 1000)
+    private String motivoRechazoCompromiso;
+
     // Adjudicación del municipio (null hasta que adjudica)
     @Enumerated(EnumType.STRING)
     private ResultadoOferta resultado;
@@ -116,7 +121,8 @@ public class Oferta {
     public boolean esAdjudicable() {
         return estado == EstadoOferta.ACTIVA
                 && rolValidacion != null && rolValidacion != RolValidacion.SIN_HABILITACION_VIGENTE
-                && cantidadValidada != null && cantidadValidada >= lote.getCantidad();
+                && cantidadValidada != null && cantidadValidada >= lote.getCantidad()
+                && motivoRechazoCompromiso == null;
     }
 
     public Long getId() { return id; }
@@ -135,4 +141,6 @@ public class Oferta {
     public String getObservacionesValidacion() { return observacionesValidacion; }
     public ResultadoOferta getResultado() { return resultado; }
     public void setResultado(ResultadoOferta resultado) { this.resultado = resultado; }
+    public String getMotivoRechazoCompromiso() { return motivoRechazoCompromiso; }
+    public void setMotivoRechazoCompromiso(String motivo) { this.motivoRechazoCompromiso = motivo; }
 }

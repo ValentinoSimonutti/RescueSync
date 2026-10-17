@@ -29,7 +29,8 @@ public final class ValidacionSN {
                                  List<String> observaciones, List<Perfil> aportes) {
     }
 
-    public record Perfil(String cuit, int cantidadValidable, String rolAsignado) {
+    public record Perfil(String cuit, String nombre, int cantidadValidable, String rolAsignado,
+                         List<String> observaciones) {
     }
 
     public static String emergenciaRef(Long id) { return "EMG-" + id; }

@@ -757,3 +757,17 @@ body:has(.modal-salir[open]) { overflow: hidden; }
 .adjudicar-rol.apoyo { background: #fff3e0; color: #b45309; }
 .adjudicar-observaciones { color: var(--text); }
 .ong-resultados { margin: 12px 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; }
+
+/* Despliegue: compromiso, ejecución y cierre */
+.despliegue-lotes { display: grid; gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; }
+.despliegue-lotes > li { padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; }
+.despliegue-lotes h3 { margin: 0 0 8px; color: var(--text-h); font-size: 15px; }
+.despliegue-ongs { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.despliegue-ongs li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.despliegue-ongs .adjudicar-rol { margin-left: 6px; }
+.despliegue-curso { color: #b45309; font-weight: 600; }
+.despliegue-fin { color: #2e7d32; font-weight: 600; }
+.despliegue-detalle { padding: 0 24px 18px; }
+.despliegue-grupo { margin: 8px 0 0; color: var(--text-h); font-size: 16px; }
+.ong-finalizar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 6px; }
+@media (max-width: 600px) { .despliegue-detalle { padding: 0 18px 16px; } }

@@ -16,6 +16,7 @@ export interface Emergencia {
   estado: string;
   fechaCierreOfertas: string | null;
   bonitaCaseId: number | null;   // case creado en Bonita para esta emergencia
+  avisoCompromiso: string | null;   // por qué el Sistema Nacional rechazó el último compromiso
 }
 
 export function crearEmergencia(

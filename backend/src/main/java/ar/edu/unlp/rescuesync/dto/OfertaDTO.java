@@ -27,7 +27,8 @@ public record OfertaDTO(
         String rolValidacion,             // perfil del Sistema Nacional (null antes de validar)
         Integer cantidadValidada,
         List<String> observacionesValidacion,
-        String resultado                  // ADJUDICADA / NO_SELECCIONADA (null antes de adjudicar)
+        String resultado,                 // ADJUDICADA / NO_SELECCIONADA (null antes de adjudicar)
+        String estadoEmergencia           // para que la ONG sepa si ya puede ejecutar / finalizar
 ) {
     // ongId = ONG que consulta (null = coordinador / Bonita)
     public static OfertaDTO desde(Oferta o, Long ongId) {
@@ -53,7 +54,8 @@ public record OfertaDTO(
                 o.getCantidadValidada(),
                 o.getObservacionesValidacion() == null || o.getObservacionesValidacion().isBlank()
                         ? List.of() : List.of(o.getObservacionesValidacion().split("\n")),
-                o.getResultado() == null ? null : o.getResultado().name()
+                o.getResultado() == null ? null : o.getResultado().name(),
+                o.getLote().getEmergencia().getEstado().name()
         );
     }
 }

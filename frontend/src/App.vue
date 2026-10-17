@@ -9,6 +9,8 @@ import GenerarLotesForm from "./components/GenerarLotesForm.vue";
 import ResolverConvocatoria from "./components/ResolverConvocatoria.vue";
 import ConvocatoriasCCR from "./components/ConvocatoriasCCR.vue";
 import AdjudicarEmergencia from "./components/AdjudicarEmergencia.vue";
+import MonitorearDespliegue from "./components/MonitorearDespliegue.vue";
+import SeguimientoDespliegues from "./components/SeguimientoDespliegues.vue";
 import type { Tarea } from "./services/tareaService";
 import type { Emergencia } from "./services/emergenciaService";
 import { logout, usuarioActual, type Usuario } from "./services/authService";
@@ -34,15 +36,20 @@ function alPublicarLotes() {
   tareaSeleccionada.value = null;
 }
 
+function alIniciarDespliegue() {
+  mensajeCoordinador.value = "Despliegue iniciado. Las ONGs ya pueden marcar sus actividades como finalizadas.";
+  tareaSeleccionada.value = null;
+}
+
 function seleccionarTarea(tarea: Tarea) {
   mensajeCoordinador.value = "";
   tareaSeleccionada.value = tarea;
 }
 
 // Coordinador: bandeja de tareas o seguimiento de convocatorias (cobertura de ofertas)
-const pantallaCoordinador = ref<"tareas" | "abiertas" | "cubiertas">("tareas");
+const pantallaCoordinador = ref<"tareas" | "abiertas" | "cubiertas" | "despliegues">("tareas");
 
-function cambiarPantallaCoordinador(pantalla: "tareas" | "abiertas" | "cubiertas") {
+function cambiarPantallaCoordinador(pantalla: "tareas" | "abiertas" | "cubiertas" | "despliegues") {
   mensajeCoordinador.value = "";
   tareaSeleccionada.value = null;
   pantallaCoordinador.value = pantalla;
@@ -179,6 +186,11 @@ function mostrarRol(rol: Usuario["rol"]) {
             @click="cambiarPantallaCoordinador('cubiertas')">
             Convocatorias cubiertas
           </button>
+          <button type="button" class="panel-nav-enlace"
+            :aria-current="pantallaCoordinador === 'despliegues' ? 'page' : undefined"
+            @click="cambiarPantallaCoordinador('despliegues')">
+            Despliegues
+          </button>
         </template>
         <button v-else type="button" class="panel-nav-enlace" aria-current="page">Lotes</button>
       </nav>
@@ -205,7 +217,8 @@ function mostrarRol(rol: Usuario["rol"]) {
     <!-- Coordinador: su bandeja de tareas (lo que Bonita dice que le toca) -->
     <template v-else-if="usuario.rol === 'CCR'">
       <!-- Seguimiento de convocatorias abiertas y cerradas con cobertura completa -->
-      <ConvocatoriasCCR v-if="pantallaCoordinador !== 'tareas'" :key="pantallaCoordinador" :vista="pantallaCoordinador" />
+      <SeguimientoDespliegues v-if="pantallaCoordinador === 'despliegues'" />
+      <ConvocatoriasCCR v-else-if="pantallaCoordinador !== 'tareas'" :key="pantallaCoordinador" :vista="pantallaCoordinador" />
 
       <BandejaTareas v-else-if="!tareaSeleccionada" :mensaje="mensajeCoordinador" @seleccionar="seleccionarTarea" />
 
@@ -221,6 +234,11 @@ function mostrarRol(rol: Usuario["rol"]) {
         v-else-if="tareaSeleccionada.nombreTarea === 'Evaluar curso de acción alternativo'"
         :key="tareaSeleccionada.tareaId" :tarea="tareaSeleccionada"
         @volver="tareaSeleccionada = null"
+      />
+      <MonitorearDespliegue
+        v-else-if="tareaSeleccionada.nombreTarea === 'Monitorear estado de despliegue'"
+        :key="tareaSeleccionada.tareaId" :tarea="tareaSeleccionada"
+        @volver="tareaSeleccionada = null" @iniciado="alIniciarDespliegue"
       />
       <!-- Otras tareas del proceso -->
       <section v-else class="emergencia-card">

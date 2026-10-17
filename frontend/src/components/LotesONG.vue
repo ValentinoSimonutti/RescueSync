@@ -6,7 +6,8 @@ import {
   coberturaDe, misOfertas, ongsParaInvitar,
   type Cobertura, type Oferta, type Ong
 } from "../services/ofertaService";
-import { capitalizar, cierreDe, tiempoRestante } from "../utils/tiempo";
+import { finalizarActividades } from "../services/ejecucionService";
+import { capitalizar, cierreDe, fechaCorta, tiempoRestante } from "../utils/tiempo";
 import OfertaLote from "./OfertaLote.vue";
 
 type Convocatoria = { emergencia: Emergencia; lotes: Lote[]; cobertura: Cobertura | null; error: string };
@@ -22,7 +23,16 @@ let reloj: ReturnType<typeof setInterval>;
 let refresco: ReturnType<typeof setInterval>;
 
 // Avisos de adjudicación: ofertas donde participa esta ONG que el municipio ya resolvió
-const resultados = computed(() => ofertas.value.filter(o => o.resultado && o.miAporte?.estado === "CONFIRMADO"));
+// (agrupadas por emergencia, la más nueva primero)
+const resultados = computed(() => ofertas.value
+  .filter(o => o.resultado && o.miAporte?.estado === "CONFIRMADO")
+  .sort((a, b) => b.emergenciaId - a.emergenciaId || a.id - b.id));
+// La finalización es por emergencia: el estado y el botón van en la última oferta adjudicada de cada una
+const cierreEnOferta = computed(() => {
+  const ultima = new Map<number, number>();
+  for (const o of resultados.value) if (o.resultado === "ADJUDICADA") ultima.set(o.emergenciaId, o.id);
+  return new Set(ultima.values());
+});
 
 const vigentes = computed(() => convocatorias.value.filter(c => {
   const fin = cierreDe(c.emergencia);
@@ -72,6 +82,37 @@ async function cargar() {
   }
 }
 
+// Ejecución: la ONG marca sus actividades de una emergencia como finalizadas
+const finalizando = ref<Oferta | null>(null);
+const enviandoFinalizacion = ref(false);
+const errorFinalizacion = ref("");
+const mensajeFinalizacion = ref("");
+const dialogoFinalizar = ref<HTMLDialogElement | null>(null);
+
+function pedirFinalizacion(oferta: Oferta) {
+  finalizando.value = oferta;
+  errorFinalizacion.value = "";
+  dialogoFinalizar.value?.showModal();
+}
+
+async function confirmarFinalizacion() {
+  if (!finalizando.value || enviandoFinalizacion.value) return;
+  enviandoFinalizacion.value = true;
+  errorFinalizacion.value = "";
+  try {
+    const despliegue = await finalizarActividades(finalizando.value.emergenciaId);
+    dialogoFinalizar.value?.close();
+    mensajeFinalizacion.value = despliegue.ongsFinalizadas === despliegue.ongsTotal
+      ? "Actividades finalizadas. Eras la última ONG: se cierra el proyecto y se liberan los recursos."
+      : "Actividades finalizadas. El Sistema Nacional liberó tus recursos de esta emergencia.";
+    await cargar();
+  } catch (e) {
+    errorFinalizacion.value = e instanceof Error ? e.message : "No se pudo marcar la finalización";
+  } finally {
+    enviandoFinalizacion.value = false;
+  }
+}
+
 function alVolver() {
   if (document.visibilityState === "visible") {
     ahora.value = Date.now();
@@ -109,6 +150,7 @@ onUnmounted(() => {
     </p>
     <p v-if="error" class="emergencia-error" role="alert">{{ error }}</p>
 
+    <p v-if="mensajeFinalizacion" class="emergencia-mensaje" role="status">{{ mensajeFinalizacion }}</p>
     <section v-if="resultados.length" class="ong-resultados" aria-labelledby="ong-resultados-titulo">
       <h2 id="ong-resultados-titulo" class="ong-oferta-titulo">Resultados de adjudicación</h2>
       <ul class="ong-aportes">
@@ -118,6 +160,13 @@ onUnmounted(() => {
             tu oferta fue seleccionada como responsable{{ oferta.consorcio ? " (en consorcio)" : "" }}<template v-if="oferta.miAporte?.rolValidacion === 'APOYO_SECUNDARIO'">, con tu ONG como apoyo secundario</template>.
           </strong>
           <template v-else>el municipio eligió otra oferta.</template>
+          <div v-if="cierreEnOferta.has(oferta.id)" class="ong-finalizar">
+            <span v-if="oferta.miAporte?.fechaFinalizacion">Marcaste tus actividades de esta emergencia como finalizadas el {{ fechaCorta(oferta.miAporte.fechaFinalizacion) }}.</span>
+            <span v-if="oferta.estadoEmergencia === 'ADJUDICADA'" class="ong-ayuda">Esperando que el coordinador inicie el despliegue.</span>
+            <span v-else-if="oferta.estadoEmergencia === 'CERRADA'">Proyecto cerrado: tus recursos quedaron liberados.</span>
+            <button v-else-if="oferta.estadoEmergencia === 'EN_EJECUCION' && !oferta.miAporte?.fechaFinalizacion"
+              type="button" class="btn-ingresar" @click="pedirFinalizacion(oferta)">Marcar actividades como finalizadas</button>
+          </div>
         </li>
       </ul>
     </section>
@@ -153,5 +202,21 @@ onUnmounted(() => {
         </ul>
       </li>
     </ul>
+
+    <dialog ref="dialogoFinalizar" class="modal-salir modal-emergencia" aria-labelledby="finalizar-titulo"
+      :aria-busy="enviandoFinalizacion" @cancel.prevent="!enviandoFinalizacion && dialogoFinalizar?.close()">
+      <h2 id="finalizar-titulo">Finalizar actividades</h2>
+      <p v-if="finalizando">
+        Emergencia #{{ finalizando.emergenciaId }} · {{ finalizando.zonaAfectada }}. Se le informa al Sistema Nacional,
+        que libera los recursos que tu ONG tenía comprometidos en esta emergencia. ¿Confirmás?
+      </p>
+      <p v-if="errorFinalizacion" class="emergencia-error" role="alert">{{ errorFinalizacion }}</p>
+      <div class="modal-salir-acciones">
+        <button type="button" class="bandeja-actualizar" :disabled="enviandoFinalizacion" autofocus @click="dialogoFinalizar?.close()">Cancelar</button>
+        <button type="button" class="btn-ingresar" :disabled="enviandoFinalizacion" @click="confirmarFinalizacion">
+          {{ enviandoFinalizacion ? "Informando..." : "Confirmar" }}
+        </button>
+      </div>
+    </dialog>
   </section>
 </template>

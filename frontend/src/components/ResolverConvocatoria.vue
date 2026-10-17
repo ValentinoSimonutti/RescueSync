@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import type { Tarea } from "../services/tareaService";
-import { coberturaDe, type Cobertura } from "../services/ofertaService";
+import { coberturaDe, type Cobertura, type RolValidacion } from "../services/ofertaService";
 import { capitalizar, cierreDe } from "../utils/tiempo";
 import GenerarLotesForm from "./GenerarLotesForm.vue";
 
@@ -16,7 +16,14 @@ const lotesIniciales = computed(() => cobertura.value?.lotes.map(l => ({
   recursoCodigo: l.recursoCodigo ?? "", cantidad: l.requerido
 })) ?? []);
 const hayAportes = computed(() => cobertura.value?.lotes.some(l => l.ofrecido > 0) ?? false);
-const pendientes = computed(() => cobertura.value?.lotes.filter(l => !l.cubierto).length ?? 0);
+// Si el Sistema Nacional ya validó, lo que cuenta es lo validado (no lo ofrecido)
+const validada = computed(() => cobertura.value?.lotes.some(l => l.validado !== null) ?? false);
+const pendientes = computed(() => cobertura.value?.lotes.filter(l => validada.value ? !l.habilitado : !l.cubierto).length ?? 0);
+const etiquetaRol: Record<RolValidacion, string> = {
+  PRINCIPAL: "Principal",
+  APOYO_SECUNDARIO: "Apoyo secundario",
+  SIN_HABILITACION_VIGENTE: "Sin habilitación vigente"
+};
 const cierre = computed(() => {
   const fecha = cierreDe(cobertura.value?.emergencia ?? props.tarea.emergencia);
   return Number.isFinite(fecha) ? new Date(fecha).toLocaleString("es-AR") : "No disponible";
@@ -66,6 +73,7 @@ onUnmounted(() => { activo = false; });
     <template v-if="cobertura">
       <p v-if="!cobertura.lotes.length || cobertura.lotesCubiertos || hayAportes" class="resolver-diagnostico" role="status">
         <template v-if="!cobertura.lotes.length">No hay datos de los lotes para explicar el resultado de esta convocatoria.</template>
+        <template v-else-if="validada">El Sistema Nacional no habilitó ofertas suficientes: {{ pendientes }} de {{ cobertura.lotes.length }} lotes no tienen una oferta validada que los cubra. Abajo está el motivo de cada rechazo.</template>
         <template v-else-if="cobertura.lotesCubiertos">La cobertura consultada ahora está completa, pero la tarea de resolución sigue pendiente. Actualizá la bandeja para comprobar su estado.</template>
         <template v-else-if="hayAportes">El plazo finalizó con cobertura insuficiente. Quedan {{ pendientes }} de {{ cobertura.lotes.length }} lotes sin cubrir por completo.</template>
       </p>
@@ -76,11 +84,19 @@ onUnmounted(() => { activo = false; });
             <div><dt>Necesario</dt><dd>{{ lote.requerido }}</dd></div>
             <div><dt>Mejor oferta</dt><dd>{{ lote.ofrecido }}</dd></div>
             <div><dt>Faltante</dt><dd>{{ lote.faltante }}</dd></div>
+            <div v-if="validada"><dt>Validado por el SN</dt><dd :class="lote.habilitado ? 'despliegue-fin' : 'tarea-faltante'">{{ lote.validado ?? 0 }}</dd></div>
           </dl>
           <p v-if="!lote.ofertas.length" class="ong-ayuda">No hay ofertas disponibles para este lote.</p>
           <ul v-else class="ong-aportes">
             <li v-for="oferta in lote.ofertas" :key="oferta.id">
               {{ oferta.liderNombre }} · {{ oferta.total }} · {{ capitalizar(oferta.estado) }}
+              <template v-if="oferta.rolValidacion">
+                · <span class="adjudicar-rol" :class="{ apoyo: oferta.rolValidacion !== 'PRINCIPAL' }">{{ etiquetaRol[oferta.rolValidacion] }}</span>
+                validado {{ oferta.cantidadValidada ?? 0 }} de {{ lote.requerido }}
+              </template>
+              <ul v-if="oferta.observacionesValidacion.length" class="adjudicar-observaciones">
+                <li v-for="(observacion, i) in oferta.observacionesValidacion" :key="i">{{ observacion }}</li>
+              </ul>
               <ul>
                 <li v-for="aporte in oferta.aportes" :key="aporte.ongId">
                   {{ aporte.ongNombre }}: {{ aporte.cantidad }} · {{ capitalizar(aporte.estado) }}
@@ -93,7 +109,7 @@ onUnmounted(() => { activo = false; });
     </template>
 
     <div class="resolver-acciones">
-      <button type="button" class="btn-ingresar" :disabled="cargando || !lotesIniciales.length || cobertura?.lotesCubiertos"
+      <button type="button" class="btn-ingresar" :disabled="cargando || !lotesIniciales.length || (validada ? pendientes === 0 : cobertura?.lotesCubiertos)"
         @click="reabriendo = true">Reabrir convocatoria</button>
       <button type="button" class="bandeja-actualizar" disabled>Aceptar oferta parcial</button>
     </div>

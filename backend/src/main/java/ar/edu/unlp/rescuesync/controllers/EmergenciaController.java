@@ -6,9 +6,11 @@ import ar.edu.unlp.rescuesync.auth.UsuarioLogueado;
 import ar.edu.unlp.rescuesync.service.EmergenciaService;
 import ar.edu.unlp.rescuesync.service.OfertaService;
 import ar.edu.unlp.rescuesync.service.AdjudicacionService;
+import ar.edu.unlp.rescuesync.service.EjecucionService;
 import ar.edu.unlp.rescuesync.dto.AdjudicacionDTO;
 import ar.edu.unlp.rescuesync.dto.AdjudicarDTO;
 import ar.edu.unlp.rescuesync.dto.CoberturaDTO;
+import ar.edu.unlp.rescuesync.dto.DespliegueDTO;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,13 +29,16 @@ public class EmergenciaController {
     private final EmergenciaService emergenciaService;
     private final OfertaService ofertaService;     // para la cobertura de las convocatorias
     private final AdjudicacionService adjudicacionService;
+    private final EjecucionService ejecucionService;
     private final SesionActual sesionActual;       // para saber quién está logueado
 
     public EmergenciaController(EmergenciaService emergenciaService, OfertaService ofertaService,
-                                AdjudicacionService adjudicacionService, SesionActual sesionActual) {
+                                AdjudicacionService adjudicacionService, EjecucionService ejecucionService,
+                                SesionActual sesionActual) {
         this.emergenciaService = emergenciaService;
         this.ofertaService = ofertaService;
         this.adjudicacionService = adjudicacionService;
+        this.ejecucionService = ejecucionService;
         this.sesionActual = sesionActual;
     }
 
@@ -134,6 +139,44 @@ public class EmergenciaController {
     @PostMapping("/{id}/adjudicacion")
     public EmergenciaDTO adjudicar(@PathVariable Long id, @RequestBody AdjudicarDTO dto, HttpSession session) {
         return adjudicacionService.adjudicar(id, dto, municipio(session));
+    }
+
+    // GET /api/emergencias/despliegues -> emergencias adjudicadas, en ejecución o cerradas (coordinador)
+    @GetMapping("/despliegues")
+    public List<DespliegueDTO> despliegues(HttpSession session) {
+        coordinador(session);
+        return ejecucionService.despliegues();
+    }
+
+    // GET /api/emergencias/{id}/despliegue -> qué se adjudicó y qué ONGs ya terminaron
+    @GetMapping("/{id}/despliegue")
+    public DespliegueDTO despliegue(@PathVariable Long id, HttpSession session) {
+        coordinador(session);
+        return ejecucionService.despliegue(id);
+    }
+
+    // POST /api/emergencias/{id}/despliegue/inicio -> completa "Monitorear estado de despliegue" en Bonita
+    @PostMapping("/{id}/despliegue/inicio")
+    public DespliegueDTO iniciarDespliegue(@PathVariable Long id, HttpSession session) {
+        return ejecucionService.iniciarDespliegue(id, coordinador(session));
+    }
+
+    // POST /api/emergencias/{id}/finalizacion -> la ONG logueada marca sus actividades como finalizadas
+    @PostMapping("/{id}/finalizacion")
+    public DespliegueDTO finalizar(@PathVariable Long id, HttpSession session) {
+        UsuarioLogueado usuario = sesionActual.obtener(session);
+        if (usuario.rol() != Rol.REPRESENTANTE_ONG) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo una ONG puede marcar sus actividades como finalizadas");
+        }
+        return ejecucionService.finalizar(id, usuario);
+    }
+
+    private UsuarioLogueado coordinador(HttpSession session) {
+        UsuarioLogueado usuario = sesionActual.obtener(session);
+        if (usuario.rol() != Rol.CCR) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el centro coordinador sigue los despliegues");
+        }
+        return usuario;
     }
 
     private UsuarioLogueado municipio(HttpSession session) {

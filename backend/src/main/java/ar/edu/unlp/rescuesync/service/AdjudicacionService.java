@@ -122,7 +122,7 @@ public class AdjudicacionService {
                         "La oferta " + validada.ofertaRef() + " no es una oferta activa de la emergencia " + emergenciaId);
             }
             oferta.registrarValidacion(rol(validada.rolOferta()), validada.cantidadValidada(),
-                    String.join("\n", Optional.ofNullable(validada.observaciones()).orElse(List.of())));
+                    String.join("\n", observaciones(validada)));
 
             // Perfil de cada ONG del aporte (se cruza por CUIT)
             for (ValidacionSN.Perfil perfil : Optional.ofNullable(validada.aportes()).orElse(List.<ValidacionSN.Perfil>of())) {
@@ -238,6 +238,18 @@ public class AdjudicacionService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "La emergencia no es de tu municipio");
         }
         return emergencia;
+    }
+
+    // Observaciones de la oferta + las de cada ONG del aporte (ahí viene el motivo de un rechazo,
+    // ej. "ONG 1: No tiene la certificación COMBATE_INCENDIOS que requiere BOMBERO_FORESTAL")
+    private static List<String> observaciones(ValidacionSN.OfertaValidada validada) {
+        List<String> todas = new java.util.ArrayList<>(Optional.ofNullable(validada.observaciones()).orElse(List.of()));
+        for (ValidacionSN.Perfil perfil : Optional.ofNullable(validada.aportes()).orElse(List.<ValidacionSN.Perfil>of())) {
+            String quien = perfil.nombre() != null ? perfil.nombre() : "CUIT " + perfil.cuit();
+            Optional.ofNullable(perfil.observaciones()).orElse(List.of())
+                    .forEach(o -> todas.add(quien + ": " + o));
+        }
+        return todas;
     }
 
     // El SN manda el rol como texto; uno desconocido se toma como sin habilitación

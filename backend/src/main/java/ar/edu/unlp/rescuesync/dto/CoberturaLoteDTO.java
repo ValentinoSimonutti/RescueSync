@@ -13,6 +13,8 @@ public record CoberturaLoteDTO(
         int porcentaje,        // tope 100
         boolean cubierto,      // al menos una oferta cubre el lote sola
         int ofertasCompletas,  // cuántas ofertas cubren el lote (alternativas para el municipio)
+        Integer validado,      // lo mejor que validó el Sistema Nacional (null si todavía no validó)
+        boolean habilitado,    // hay una oferta validada que cubre el lote (se puede adjudicar)
         List<OfertaDTO> ofertas
 ) {
 }

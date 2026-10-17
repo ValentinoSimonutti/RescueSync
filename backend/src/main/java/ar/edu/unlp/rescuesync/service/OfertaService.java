@@ -6,6 +6,7 @@ import ar.edu.unlp.rescuesync.entity.*;
 import ar.edu.unlp.rescuesync.entity.enums.EstadoAporte;
 import ar.edu.unlp.rescuesync.entity.enums.EstadoEmergencia;
 import ar.edu.unlp.rescuesync.entity.enums.EstadoOferta;
+import ar.edu.unlp.rescuesync.entity.enums.RolValidacion;
 import ar.edu.unlp.rescuesync.repository.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -262,10 +263,17 @@ public class OfertaService {
             int completas = (int) ofertas.stream().filter(o -> o.getCantidad() >= requerido).count();
             int faltante = Math.max(0, requerido - ofrecido);
             int porcentaje = requerido == 0 ? 100 : Math.min(100, ofrecido * 100 / requerido);
+            // Después de la validación: cuánto habilitó el Sistema Nacional de la mejor oferta
+            Integer validado = ofertas.stream().anyMatch(o -> o.getRolValidacion() != null)
+                    ? ofertas.stream()
+                            .filter(o -> o.getRolValidacion() != null && o.getRolValidacion() != RolValidacion.SIN_HABILITACION_VIGENTE)
+                            .mapToInt(o -> o.getCantidadValidada() == null ? 0 : o.getCantidadValidada())
+                            .max().orElse(0)
+                    : null;
 
             detalle.add(new CoberturaLoteDTO(
                     lote.getId(), lote.getRecurso(), lote.getRecursoCodigo(), requerido, ofrecido, faltante, porcentaje,
-                    ofrecido >= requerido, completas,
+                    ofrecido >= requerido, completas, validado, ofertas.stream().anyMatch(Oferta::esAdjudicable),
                     ofertas.stream().map(o -> OfertaDTO.desde(o, null)).toList()
             ));
         }

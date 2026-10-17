@@ -31,6 +31,10 @@ public class Emergencia {
     @Enumerated(EnumType.STRING)
     private EstadoEmergencia estado;
 
+    // Por qué el Sistema Nacional rechazó el último compromiso (se muestra al volver a adjudicar)
+    @Column(length = 2000)
+    private String avisoCompromiso;
+
     @ManyToOne
     private Municipio municipio;
 
@@ -115,6 +119,14 @@ public class Emergencia {
 
     public Long getId() {
         return id;
+    }
+
+    public String getAvisoCompromiso() {
+        return avisoCompromiso;
+    }
+
+    public void setAvisoCompromiso(String avisoCompromiso) {
+        this.avisoCompromiso = avisoCompromiso;
     }
 
     public void addLote(Lote lote) {

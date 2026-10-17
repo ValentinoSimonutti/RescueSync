@@ -9,6 +9,7 @@ export interface Aporte {
   estado: "PENDIENTE" | "CONFIRMADO" | "RECHAZADO" | "RETIRADO";
   rolValidacion: RolValidacion | null;   // perfil del Sistema Nacional para esta ONG
   cantidadValidada: number | null;
+  fechaFinalizacion: string | null;      // cuándo la ONG marcó sus actividades como finalizadas
 }
 
 // Perfil que asigna el Sistema Nacional al validar
@@ -36,6 +37,7 @@ export interface Oferta {
   cantidadValidada: number | null;
   observacionesValidacion: string[];
   resultado: "ADJUDICADA" | "NO_SELECCIONADA" | null;   // null antes de adjudicar
+  estadoEmergencia: string;                              // ADJUDICADA, EN_EJECUCION, CERRADA...
 }
 
 // Una línea del historial (trazabilidad)
@@ -64,6 +66,8 @@ export interface CoberturaLote {
   porcentaje: number;
   cubierto: boolean;          // al menos una oferta cubre el lote sola
   ofertasCompletas: number;   // ofertas que compiten por el lote
+  validado: number | null;    // lo mejor que validó el Sistema Nacional (null antes de validar)
+  habilitado: boolean;        // hay una oferta validada que cubre el lote
   ofertas: Oferta[];
 }
 

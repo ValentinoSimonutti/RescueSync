@@ -17,6 +17,7 @@ public class EmergenciaDTO {
     private Long bonitaCaseId;
     private EstadoEmergencia estado;
     private LocalDateTime fechaCierreOfertas;
+    private String avisoCompromiso;
 
     public EmergenciaDTO() {
     }
@@ -33,6 +34,7 @@ public class EmergenciaDTO {
         dto.setBonitaCaseId(emergencia.getBonitaCaseId());
         dto.setEstado(emergencia.getEstado());
         dto.setFechaCierreOfertas(emergencia.getFechaCierreOfertas());
+        dto.setAvisoCompromiso(emergencia.getAvisoCompromiso());
         return dto;
     }
 
@@ -99,4 +101,12 @@ public class EmergenciaDTO {
     public void setFechaCierreOfertas(LocalDateTime fechaCierreOfertas) {
         this.fechaCierreOfertas = fechaCierreOfertas;
     }
-}
+
+    public String getAvisoCompromiso() {
+        return avisoCompromiso;
+    }
+
+    public void setAvisoCompromiso(String avisoCompromiso) {
+        this.avisoCompromiso = avisoCompromiso;
+    }
+}
