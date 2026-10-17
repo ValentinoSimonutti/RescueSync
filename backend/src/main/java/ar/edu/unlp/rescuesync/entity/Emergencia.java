@@ -35,6 +35,9 @@ public class Emergencia {
     @Column(length = 2000)
     private String avisoCompromiso;
 
+    // El coordinador decidió seguir con los lotes que sí tienen oferta validada (el resto queda sin cubrir)
+    private Boolean coberturaParcial;
+
     @ManyToOne
     private Municipio municipio;
 
@@ -119,6 +122,14 @@ public class Emergencia {
 
     public Long getId() {
         return id;
+    }
+
+    public boolean isCoberturaParcial() {
+        return coberturaParcial != null && coberturaParcial;
+    }
+
+    public void setCoberturaParcial(boolean coberturaParcial) {
+        this.coberturaParcial = coberturaParcial;
     }
 
     public String getAvisoCompromiso() {

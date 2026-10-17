@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClientResponseException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 // Única clase del backend que habla HTTP con Bonita.
@@ -188,6 +189,15 @@ public class BonitaClient {
                 .body(LISTA_JSON));
 
         return tareas == null ? List.of() : tareas;
+    }
+
+    // ---- La tarea con ese nombre, lista para este usuario, en un case -----------
+    public Optional<Long> tareaLista(BonitaSession sesion, long caseId, String nombre) {
+        String caso = String.valueOf(caseId);
+        return tareasPendientes(sesion).stream()
+                .filter(t -> nombre.equals(t.get("name")) && caso.equals(String.valueOf(t.get("caseId"))))
+                .map(t -> Long.parseLong(t.get("id").toString()))
+                .findFirst();
     }
 
     // ---- Postman 5 y 7: completar una tarea mandando su contract --------------

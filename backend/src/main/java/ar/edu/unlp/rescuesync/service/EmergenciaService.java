@@ -142,6 +142,7 @@ public class EmergenciaService {
         long taskId = bonitaClient.buscarTareaLista(sesion, emergencia.getBonitaCaseId());
 
         long duracionMs = dto.getDuracionMinutos() * 60_000L;   // Bonita espera milisegundos (L = long)
+        emergenciaRepository.flush();   // si la base rechaza algo, que falle antes de avanzar en Bonita
         bonitaClient.ejecutarTarea(sesion, taskId, Map.of("duracionVentanaMsInput", duracionMs));
         //    -> Bonita guarda duracionVentanaMs y el case pasa a "Cargar o editar ofertas" con el TIMER andando
 
@@ -232,7 +233,7 @@ public class EmergenciaService {
             );
         }
 
-        return loteRepository.findByEmergencia_IdOrderByIdAsc(emergenciaId)
+        return loteRepository.vigentesDe(emergenciaId)
                 .stream()
                 .map(lote -> {
                     LoteDTO dto = new LoteDTO();

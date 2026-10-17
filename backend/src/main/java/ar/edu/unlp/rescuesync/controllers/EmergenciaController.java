@@ -7,6 +7,7 @@ import ar.edu.unlp.rescuesync.service.EmergenciaService;
 import ar.edu.unlp.rescuesync.service.OfertaService;
 import ar.edu.unlp.rescuesync.service.AdjudicacionService;
 import ar.edu.unlp.rescuesync.service.EjecucionService;
+import ar.edu.unlp.rescuesync.service.AlternativaService;
 import ar.edu.unlp.rescuesync.dto.AdjudicacionDTO;
 import ar.edu.unlp.rescuesync.dto.AdjudicarDTO;
 import ar.edu.unlp.rescuesync.dto.CoberturaDTO;
@@ -30,15 +31,17 @@ public class EmergenciaController {
     private final OfertaService ofertaService;     // para la cobertura de las convocatorias
     private final AdjudicacionService adjudicacionService;
     private final EjecucionService ejecucionService;
+    private final AlternativaService alternativaService;
     private final SesionActual sesionActual;       // para saber quién está logueado
 
     public EmergenciaController(EmergenciaService emergenciaService, OfertaService ofertaService,
                                 AdjudicacionService adjudicacionService, EjecucionService ejecucionService,
-                                SesionActual sesionActual) {
+                                AlternativaService alternativaService, SesionActual sesionActual) {
         this.emergenciaService = emergenciaService;
         this.ofertaService = ofertaService;
         this.adjudicacionService = adjudicacionService;
         this.ejecucionService = ejecucionService;
+        this.alternativaService = alternativaService;
         this.sesionActual = sesionActual;
     }
 
@@ -141,6 +144,19 @@ public class EmergenciaController {
         return adjudicacionService.adjudicar(id, dto, municipio(session));
     }
 
+    // POST /api/emergencias/{id}/reapertura -> el coordinador reabre la convocatoria desde cero
+    // (mismos recursos o menos, otras cantidades, plazo nuevo). Completa "Evaluar curso de acción alternativo".
+    @PostMapping("/{id}/reapertura")
+    public EmergenciaDTO reabrir(@PathVariable Long id, @RequestBody PublicarLotesDTO dto, HttpSession session) {
+        return alternativaService.reabrir(id, dto, coordinador(session));
+    }
+
+    // POST /api/emergencias/{id}/cobertura-parcial -> seguir solo con los lotes que tienen oferta validada
+    @PostMapping("/{id}/cobertura-parcial")
+    public EmergenciaDTO coberturaParcial(@PathVariable Long id, HttpSession session) {
+        return alternativaService.continuarConCoberturaParcial(id, coordinador(session));
+    }
+
     // GET /api/emergencias/despliegues -> emergencias adjudicadas, en ejecución o cerradas (coordinador)
     @GetMapping("/despliegues")
     public List<DespliegueDTO> despliegues(HttpSession session) {
@@ -174,7 +190,7 @@ public class EmergenciaController {
     private UsuarioLogueado coordinador(HttpSession session) {
         UsuarioLogueado usuario = sesionActual.obtener(session);
         if (usuario.rol() != Rol.CCR) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el centro coordinador sigue los despliegues");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Solo el centro coordinador puede hacer esto");
         }
         return usuario;
     }

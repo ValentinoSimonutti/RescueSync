@@ -18,6 +18,7 @@ public class EmergenciaDTO {
     private EstadoEmergencia estado;
     private LocalDateTime fechaCierreOfertas;
     private String avisoCompromiso;
+    private boolean coberturaParcial;
 
     public EmergenciaDTO() {
     }
@@ -35,6 +36,7 @@ public class EmergenciaDTO {
         dto.setEstado(emergencia.getEstado());
         dto.setFechaCierreOfertas(emergencia.getFechaCierreOfertas());
         dto.setAvisoCompromiso(emergencia.getAvisoCompromiso());
+        dto.setCoberturaParcial(emergencia.isCoberturaParcial());
         return dto;
     }
 
@@ -100,6 +102,14 @@ public class EmergenciaDTO {
 
     public void setFechaCierreOfertas(LocalDateTime fechaCierreOfertas) {
         this.fechaCierreOfertas = fechaCierreOfertas;
+    }
+
+    public boolean isCoberturaParcial() {
+        return coberturaParcial;
+    }
+
+    public void setCoberturaParcial(boolean coberturaParcial) {
+        this.coberturaParcial = coberturaParcial;
     }
 
     public String getAvisoCompromiso() {

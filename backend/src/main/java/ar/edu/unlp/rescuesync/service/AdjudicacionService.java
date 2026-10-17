@@ -147,7 +147,7 @@ public class AdjudicacionService {
         Emergencia emergencia = delMunicipio(emergenciaId, usuario);
         List<Oferta> ofertas = ofertasActivas(emergenciaId);
 
-        List<AdjudicacionDTO.LoteAdjudicable> lotes = loteRepository.findByEmergencia_IdOrderByIdAsc(emergenciaId)
+        List<AdjudicacionDTO.LoteAdjudicable> lotes = loteRepository.vigentesDe(emergenciaId)
                 .stream()
                 .map(lote -> new AdjudicacionDTO.LoteAdjudicable(
                         lote.getId(), lote.getRecurso(), lote.getRecursoCodigo(), lote.getCantidad(),
@@ -181,13 +181,24 @@ public class AdjudicacionService {
         }
 
         List<Oferta> ofertas = ofertasActivas(emergenciaId);
-        List<Lote> lotes = loteRepository.findByEmergencia_IdOrderByIdAsc(emergenciaId);
+        List<Lote> lotes = loteRepository.vigentesDe(emergenciaId);
+        int adjudicados = 0;
         for (Lote lote : lotes) {
             Long ofertaId = elegidas.remove(lote.getId());
+            boolean tieneOpciones = ofertas.stream()
+                    .anyMatch(o -> o.getLote().getId().equals(lote.getId()) && o.esAdjudicable());
+            // Cobertura parcial (lo decidió el coordinador): un lote sin opciones queda sin cubrir
+            if (ofertaId == null && emergencia.isCoberturaParcial() && !tieneOpciones) {
+                ofertas.stream()
+                        .filter(o -> o.getLote().getId().equals(lote.getId()))
+                        .forEach(o -> o.setResultado(ResultadoOferta.NO_SELECCIONADA));
+                continue;
+            }
             if (ofertaId == null) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Falta elegir la oferta para " + lote.getRecurso());
             }
+            adjudicados++;
             boolean valida = ofertas.stream().anyMatch(o -> o.getId().equals(ofertaId)
                     && o.getLote().getId().equals(lote.getId()) && o.esAdjudicable());
             if (!valida) {
@@ -202,12 +213,16 @@ public class AdjudicacionService {
         if (!elegidas.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hay lotes elegidos que no son de esta emergencia");
         }
+        if (adjudicados == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Elegí al menos una oferta");
+        }
 
         emergencia.setEstado(EstadoEmergencia.ADJUDICADA);
 
         // Completar "Adjudicar y notificar" con la sesión del municipio -> Bonita sigue a "Comprometer Recursos"
         BonitaSession sesion = usuario.bonita();
         long taskId = bonitaClient.buscarTareaLista(sesion, emergencia.getBonitaCaseId());
+        emergenciaRepository.flush();   // si la base rechaza algo, que falle antes de avanzar en Bonita
         bonitaClient.ejecutarTarea(sesion, taskId, Map.of());
 
         return EmergenciaDTO.desde(emergencia);
@@ -216,7 +231,7 @@ public class AdjudicacionService {
     // ---- helpers -----------------------------------------------------------------
 
     private boolean todosLosLotesTienenOpcion(Long emergenciaId, Collection<Oferta> ofertas) {
-        List<Lote> lotes = loteRepository.findByEmergencia_IdOrderByIdAsc(emergenciaId);
+        List<Lote> lotes = loteRepository.vigentesDe(emergenciaId);
         return !lotes.isEmpty() && lotes.stream().allMatch(lote -> ofertas.stream()
                 .anyMatch(o -> o.getLote().getId().equals(lote.getId()) && o.esAdjudicable()));
     }

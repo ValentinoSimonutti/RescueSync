@@ -170,6 +170,7 @@ public class EjecucionService {
         }
         long tareaId = tareaLista(coordinador, emergencia, TAREA_MONITOREAR);
         emergencia.setEstado(EstadoEmergencia.EN_EJECUCION);
+        emergenciaRepository.flush();   // si la base rechaza algo, que falle antes de avanzar en Bonita
         bonitaClient.ejecutarTarea(coordinador.bonita(), tareaId, Map.of());
         return despliegueDe(emergencia);
     }
@@ -202,6 +203,7 @@ public class EjecucionService {
 
         if (asignados.stream().allMatch(a -> a.getFechaFinalizacion() != null)) {
             long tareaId = tareaLista(ong, emergencia, TAREA_EJECUTAR);
+            emergenciaRepository.flush();   // si la base rechaza algo, que falle antes de avanzar en Bonita
             bonitaClient.ejecutarTarea(ong.bonita(), tareaId, Map.of());
         }
         return despliegueDe(emergencia);
@@ -254,11 +256,7 @@ public class EjecucionService {
 
     // La tarea de Bonita con ese nombre, lista para este usuario, en el case de la emergencia
     private long tareaLista(UsuarioLogueado usuario, Emergencia emergencia, String nombre) {
-        String caseId = String.valueOf(emergencia.getBonitaCaseId());
-        return bonitaClient.tareasPendientes(usuario.bonita()).stream()
-                .filter(t -> nombre.equals(t.get("name")) && caseId.equals(String.valueOf(t.get("caseId"))))
-                .map(t -> Long.parseLong(t.get("id").toString()))
-                .findFirst()
+        return bonitaClient.tareaLista(usuario.bonita(), emergencia.getBonitaCaseId(), nombre)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT,
                         "Bonita todavía no tiene lista la tarea \"" + nombre + "\" de esta emergencia. Probá de nuevo en unos segundos."));
     }

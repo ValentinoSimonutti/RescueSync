@@ -36,6 +36,11 @@ function alPublicarLotes() {
   tareaSeleccionada.value = null;
 }
 
+function alResolverConvocatoria(mensaje: string) {
+  mensajeCoordinador.value = mensaje;
+  tareaSeleccionada.value = null;
+}
+
 function alIniciarDespliegue() {
   mensajeCoordinador.value = "Despliegue iniciado. Las ONGs ya pueden marcar sus actividades como finalizadas.";
   tareaSeleccionada.value = null;
@@ -233,7 +238,7 @@ function mostrarRol(rol: Usuario["rol"]) {
       <ResolverConvocatoria
         v-else-if="tareaSeleccionada.nombreTarea === 'Evaluar curso de acción alternativo'"
         :key="tareaSeleccionada.tareaId" :tarea="tareaSeleccionada"
-        @volver="tareaSeleccionada = null"
+        @volver="tareaSeleccionada = null" @resuelto="alResolverConvocatoria"
       />
       <MonitorearDespliegue
         v-else-if="tareaSeleccionada.nombreTarea === 'Monitorear estado de despliegue'"

@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref } from "vue";
 import { tiposRecurso, type TipoRecurso } from "../services/catalogoService";
 import type { Tarea } from "../services/tareaService";
-import { publicarLotes, type NuevoLote } from "../services/emergenciaService";
+import { publicarLotes, reabrirConvocatoria, type NuevoLote } from "../services/emergenciaService";
 
 // La tarea que se eligió en la bandeja (trae la emergencia adentro)
 const props = defineProps<{
@@ -108,15 +108,15 @@ function quitarLote(indice: number) {
 }
 
 async function publicar() {
-  if (props.reapertura || cargando.value || !validar()) return;
+  if (cargando.value || !validar()) return;
   error.value = "";
 
   cargando.value = true;
   try {
-    await publicarLotes(props.tarea.emergencia.id, {
-      duracionMinutos: duracionMinutos.value,
-      lotes: lotes.value
-    });
+    const datos = { duracionMinutos: duracionMinutos.value, lotes: lotes.value };
+    // Reapertura: completa "Evaluar curso de acción alternativo" en vez de "Generar lotes"
+    if (props.reapertura) await reabrirConvocatoria(props.tarea.emergencia.id, datos);
+    else await publicarLotes(props.tarea.emergencia.id, datos);
     confirmacion.value?.close();
     emit("publicado");
   } catch (e) {
@@ -141,7 +141,10 @@ async function publicar() {
       <strong>Descripción:</strong> {{ tarea.emergencia.descripcion }}
     </p>
 
-    <p v-if="reapertura" class="ong-ayuda">Revisá las necesidades anteriores y ajustá las cantidades y el nuevo plazo de ofertas.</p>
+    <p v-if="reapertura" class="ong-ayuda">
+      La convocatoria se reabre desde cero: las ofertas anteriores se descartan y las ONGs vuelven a ofertar.
+      Podés cambiar las cantidades o sacar recursos (no se pueden agregar nuevos) y elegir un plazo nuevo.
+    </p>
     <p class="lotes-requeridos">Todos los campos son obligatorios.</p>
     <p v-if="cargandoCatalogo" class="ong-ayuda" role="status">Cargando el catálogo nacional de recursos. Si el Sistema Nacional estaba inactivo, puede tardar hasta un minuto.</p>
     <p v-if="errorCatalogo" class="emergencia-error" role="alert">
@@ -153,7 +156,7 @@ async function publicar() {
     <div v-for="(lote, i) in lotes" :key="i" class="lote-fila">
       <div class="emergencia-campo lote-recurso">
         <label :for="`recurso-${i}`">Recurso</label>
-        <select :id="`recurso-${i}`" v-model="lote.recursoCodigo" required :disabled="!catalogo.length"
+        <select :id="`recurso-${i}`" v-model="lote.recursoCodigo" required :disabled="!catalogo.length || reapertura"
           :aria-invalid="intentoPublicar && !!erroresLotes[i]?.recurso"
           :aria-describedby="intentoPublicar && erroresLotes[i]?.recurso ? `error-recurso-${i}` : undefined">
           <option value="" disabled>{{ cargandoCatalogo ? "Cargando catálogo..." : "Elegí un recurso" }}</option>
@@ -178,7 +181,7 @@ async function publicar() {
               aria-label="Quitar lote">✕</button>
     </div>
 
-    <button type="button" class="bandeja-actualizar lote-agregar" @click="agregarLote">+ Agregar lote</button>
+    <button v-if="!reapertura" type="button" class="bandeja-actualizar lote-agregar" @click="agregarLote">+ Agregar lote</button>
 
     <div class="emergencia-campo lote-duracion">
       <label for="duracion">Duración de la ventana de ofertas (minutos)</label>
@@ -193,14 +196,16 @@ async function publicar() {
     <div class="lote-acciones">
       <button type="button" class="bandeja-actualizar" @click="emit('volver')">Volver</button>
       <button type="button" class="btn-ingresar emergencia-submit" @click="revisar" :disabled="cargando || !catalogo.length">
-        {{ cargando ? "Publicando..." : reapertura ? "Revisar reapertura" : "Publicar convocatoria" }}
+        {{ cargando ? (reapertura ? "Reabriendo..." : "Publicando...") : reapertura ? "Revisar reapertura" : "Publicar convocatoria" }}
       </button>
     </div>
     <dialog ref="confirmacion" class="modal-salir modal-emergencia"
       aria-labelledby="confirmar-lotes-titulo" aria-describedby="confirmar-lotes-pregunta"
       :aria-busy="cargando" @cancel.prevent="editar">
-      <h2 id="confirmar-lotes-titulo">Revisar convocatoria</h2>
-      <p id="confirmar-lotes-pregunta">¿Confirmás la publicación de esta convocatoria?</p>
+      <h2 id="confirmar-lotes-titulo">{{ reapertura ? "Revisar reapertura" : "Revisar convocatoria" }}</h2>
+      <p id="confirmar-lotes-pregunta">
+        {{ reapertura ? "¿Confirmás la reapertura? Las ofertas anteriores se descartan." : "¿Confirmás la publicación de esta convocatoria?" }}
+      </p>
       <dl class="confirmacion-resumen">
         <div>
           <dt>Emergencia #{{ tarea.emergencia.id }}</dt>
@@ -219,12 +224,11 @@ async function publicar() {
           <dd>{{ duracionMinutos }} {{ duracionMinutos === 1 ? 'minuto' : 'minutos' }}</dd>
         </div>
       </dl>
-      <p v-if="reapertura" class="ong-ayuda">La reapertura todavía no está habilitada. No se enviaron cambios.</p>
       <p v-if="error" class="emergencia-error" role="alert">{{ error }}</p>
       <div class="modal-salir-acciones">
         <button type="button" class="bandeja-actualizar" :disabled="cargando" autofocus @click="editar">Editar</button>
-        <button type="button" class="btn-ingresar" :disabled="cargando || reapertura" @click="publicar">
-          {{ cargando ? "Publicando..." : "Confirmar" }}
+        <button type="button" class="btn-ingresar" :disabled="cargando" @click="publicar">
+          {{ cargando ? (reapertura ? "Reabriendo..." : "Publicando...") : "Confirmar" }}
         </button>
       </div>
     </dialog>

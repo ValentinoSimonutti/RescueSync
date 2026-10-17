@@ -2,15 +2,38 @@
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import type { Tarea } from "../services/tareaService";
 import { coberturaDe, type Cobertura, type RolValidacion } from "../services/ofertaService";
+import { continuarConCoberturaParcial } from "../services/emergenciaService";
 import { capitalizar, cierreDe } from "../utils/tiempo";
 import GenerarLotesForm from "./GenerarLotesForm.vue";
 
 const props = defineProps<{ tarea: Tarea }>();
-defineEmits<{ volver: [] }>();
+// resuelto: el coordinador decidió (reabrir o cobertura parcial) -> App.vue vuelve a la bandeja con el mensaje
+const emit = defineEmits<{ volver: []; resuelto: [mensaje: string] }>();
 const cobertura = ref<Cobertura | null>(null);
 const cargando = ref(false);
 const error = ref("");
 const reabriendo = ref(false);
+const enviandoParcial = ref(false);
+const errorParcial = ref("");
+const dialogoParcial = ref<HTMLDialogElement | null>(null);
+// Cobertura parcial: los lotes con una oferta validada se adjudican; el resto queda sin cubrir
+const lotesConOferta = computed(() => cobertura.value?.lotes.filter(l => l.habilitado) ?? []);
+const lotesSinCubrir = computed(() => cobertura.value?.lotes.filter(l => !l.habilitado) ?? []);
+
+async function confirmarParcial() {
+  if (enviandoParcial.value) return;
+  enviandoParcial.value = true;
+  errorParcial.value = "";
+  try {
+    await continuarConCoberturaParcial(props.tarea.emergencia.id);
+    dialogoParcial.value?.close();
+    emit("resuelto", "Se continúa con cobertura parcial: el municipio ya puede adjudicar los lotes cubiertos.");
+  } catch (e) {
+    errorParcial.value = e instanceof Error ? e.message : "No se pudo continuar con cobertura parcial";
+  } finally {
+    enviandoParcial.value = false;
+  }
+}
 let activo = true;
 const lotesIniciales = computed(() => cobertura.value?.lotes.map(l => ({
   recursoCodigo: l.recursoCodigo ?? "", cantidad: l.requerido
@@ -51,7 +74,8 @@ onUnmounted(() => { activo = false; });
 
 <template>
   <GenerarLotesForm v-if="reabriendo" :tarea="tarea" :lotes-iniciales="lotesIniciales"
-    reapertura @volver="reabriendo = false" />
+    reapertura @volver="reabriendo = false"
+    @publicado="emit('resuelto', 'Convocatoria reabierta. Las ONGs ya pueden volver a ofertar.')" />
   <section v-else class="emergencia-card resolver-convocatoria">
     <div class="resolver-encabezado">
       <span class="inicio-etiqueta">CONVOCATORIA VENCIDA</span>
@@ -111,7 +135,30 @@ onUnmounted(() => { activo = false; });
     <div class="resolver-acciones">
       <button type="button" class="btn-ingresar" :disabled="cargando || !lotesIniciales.length || (validada ? pendientes === 0 : cobertura?.lotesCubiertos)"
         @click="reabriendo = true">Reabrir convocatoria</button>
-      <button type="button" class="bandeja-actualizar" disabled>Aceptar oferta parcial</button>
+      <button type="button" class="bandeja-actualizar" :disabled="cargando || !lotesConOferta.length"
+        :title="lotesConOferta.length ? undefined : 'Ningún lote tiene una oferta validada por el Sistema Nacional'"
+        @click="errorParcial = ''; dialogoParcial?.showModal()">Continuar con cobertura parcial</button>
     </div>
+
+    <dialog ref="dialogoParcial" class="modal-salir modal-emergencia" aria-labelledby="parcial-titulo"
+      :aria-busy="enviandoParcial" @cancel.prevent="!enviandoParcial && dialogoParcial?.close()">
+      <h2 id="parcial-titulo">Continuar con cobertura parcial</h2>
+      <p>El municipio va a adjudicar los lotes que tienen una oferta validada. Los demás quedan sin cubrir.</p>
+      <dl class="confirmacion-resumen">
+        <div v-for="lote in lotesConOferta" :key="lote.loteId">
+          <dt>{{ lote.recurso }} ({{ lote.requerido }})</dt><dd>Se adjudica</dd>
+        </div>
+        <div v-for="lote in lotesSinCubrir" :key="lote.loteId">
+          <dt>{{ lote.recurso }} ({{ lote.requerido }})</dt><dd class="tarea-faltante">Queda sin cubrir</dd>
+        </div>
+      </dl>
+      <p v-if="errorParcial" class="emergencia-error" role="alert">{{ errorParcial }}</p>
+      <div class="modal-salir-acciones">
+        <button type="button" class="bandeja-actualizar" :disabled="enviandoParcial" autofocus @click="dialogoParcial?.close()">Cancelar</button>
+        <button type="button" class="btn-ingresar" :disabled="enviandoParcial" @click="confirmarParcial">
+          {{ enviandoParcial ? "Enviando..." : "Confirmar" }}
+        </button>
+      </div>
+    </dialog>
   </section>
 </template>

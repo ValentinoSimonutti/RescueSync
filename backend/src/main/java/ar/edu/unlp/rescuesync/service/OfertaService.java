@@ -242,7 +242,7 @@ public class OfertaService {
         Emergencia emergencia = emergenciaRepository.findById(emergenciaId)
                 .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "No existe la emergencia " + emergenciaId));
 
-        List<Lote> lotes = loteRepository.findByEmergencia_IdOrderByIdAsc(emergenciaId);
+        List<Lote> lotes = loteRepository.vigentesDe(emergenciaId);
 
         // Ofertas activas agrupadas por lote
         Map<Long, List<Oferta>> porLote = ofertaRepository
@@ -328,14 +328,24 @@ public class OfertaService {
                 ongId, loteId, EstadoOferta.ACTIVA, VIVOS);
     }
 
+    // Reapertura desde cero: la oferta deja de contar y queda en el historial por qué
+    public void descartar(Oferta oferta, String autor) {
+        oferta.setEstado(EstadoOferta.DESCARTADA);
+        registrarVersion(oferta, autor, "Descartada: el coordinador reabrió la convocatoria");
+    }
+
     // Guarda una versión nueva en el historial con la "foto" de los aportes
     private void registrarVersion(Oferta oferta, ONG autor, String accion) {
+        registrarVersion(oferta, autor.getNombre(), accion);
+    }
+
+    private void registrarVersion(Oferta oferta, String autor, String accion) {
         int numero = oferta.nuevaVersion();
         String detalle = oferta.getAportes().stream()
                 .map(a -> a.getOng().getNombre() + ": " + a.getCantidad()
                         + (a.getEstado() == EstadoAporte.CONFIRMADO ? "" : " (" + a.getEstado().name().toLowerCase() + ")"))
                 .collect(Collectors.joining(" · "));
-        versionRepository.save(new OfertaVersion(oferta, numero, autor.getNombre(), accion, oferta.getCantidad(), detalle));
+        versionRepository.save(new OfertaVersion(oferta, numero, autor, accion, oferta.getCantidad(), detalle));
     }
 
     private static ResponseStatusException error(HttpStatus status, String mensaje) {

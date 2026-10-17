@@ -17,6 +17,7 @@ export interface Emergencia {
   fechaCierreOfertas: string | null;
   bonitaCaseId: number | null;   // case creado en Bonita para esta emergencia
   avisoCompromiso: string | null;   // por qué el Sistema Nacional rechazó el último compromiso
+  coberturaParcial: boolean;        // el coordinador decidió seguir solo con los lotes cubiertos
 }
 
 export function crearEmergencia(
@@ -41,6 +42,17 @@ export interface PublicarLotesRequest {
 // POST /api/emergencias/{id}/lotes -> guarda los lotes y completa "Generar lotes" en Bonita
 export function publicarLotes(emergenciaId: number, datos: PublicarLotesRequest): Promise<Emergencia> {
   return post<Emergencia>(`/emergencias/${emergenciaId}/lotes`, datos);
+}
+
+// POST /api/emergencias/{id}/reapertura -> reabre desde cero (mismos recursos o menos) y completa
+// "Evaluar curso de acción alternativo" en Bonita
+export function reabrirConvocatoria(emergenciaId: number, datos: PublicarLotesRequest): Promise<Emergencia> {
+  return post<Emergencia>(`/emergencias/${emergenciaId}/reapertura`, datos);
+}
+
+// POST /api/emergencias/{id}/cobertura-parcial -> el municipio adjudica solo los lotes cubiertos
+export function continuarConCoberturaParcial(emergenciaId: number): Promise<Emergencia> {
+  return post<Emergencia>(`/emergencias/${emergenciaId}/cobertura-parcial`);
 }
 
 // El backend filtra por el municipio de la sesión actual.

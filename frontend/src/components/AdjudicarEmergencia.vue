@@ -16,6 +16,7 @@ const emit = defineEmits<{
 
 const lotes = ref<LoteAdjudicable[]>([]);
 const avisoCompromiso = ref<string | null>(null);   // si el SN rechazó un compromiso anterior
+const coberturaParcial = ref(false);                // el coordinador decidió seguir sin algunos lotes
 const elegidas = ref<Record<number, number>>({});   // loteId -> ofertaId
 const cargando = ref(true);
 const enviando = ref(false);
@@ -39,6 +40,7 @@ async function cargar() {
     const datos = await opcionesAdjudicacion(props.emergencia.id);
     lotes.value = datos.lotes;
     avisoCompromiso.value = datos.emergencia.avisoCompromiso;
+    coberturaParcial.value = datos.emergencia.coberturaParcial;
     // Si un lote tiene una sola opción, ya queda elegida
     elegidas.value = Object.fromEntries(datos.lotes
       .filter(l => l.ofertas.length === 1)
@@ -63,7 +65,7 @@ function ofertaElegida(lote: LoteAdjudicable) {
 function revisar() {
   intentoConfirmar.value = true;
   error.value = "";
-  if (lotesSinOpciones.value.length || faltaElegir.value.length) return;
+  if ((!coberturaParcial.value && lotesSinOpciones.value.length) || faltaElegir.value.length) return;
   confirmacion.value?.showModal();
 }
 
@@ -72,7 +74,10 @@ async function confirmar() {
   enviando.value = true;
   error.value = "";
   try {
-    await adjudicar(props.emergencia.id, lotes.value.map(l => ({ loteId: l.loteId, ofertaId: elegidas.value[l.loteId]! })));
+    // En cobertura parcial, los lotes sin opciones no se mandan: quedan sin cubrir
+    await adjudicar(props.emergencia.id, lotes.value
+      .filter(l => l.ofertas.length)
+      .map(l => ({ loteId: l.loteId, ofertaId: elegidas.value[l.loteId]! })));
     confirmacion.value?.close();
     emit("adjudicado");
   } catch (e) {
@@ -101,15 +106,18 @@ async function confirmar() {
 
     <template v-else>
       <p v-if="avisoCompromiso" class="emergencia-error" role="alert">{{ avisoCompromiso }}</p>
-      <p v-if="lotesSinOpciones.length" class="emergencia-error" role="alert">
+      <p v-if="coberturaParcial" class="ong-ayuda" role="note">
+        El coordinador decidió continuar con cobertura parcial: adjudicás los lotes que tienen ofertas validadas y el resto queda sin cubrir.
+      </p>
+      <p v-else-if="lotesSinOpciones.length" class="emergencia-error" role="alert">
         No se puede adjudicar: {{ lotesSinOpciones.map(l => l.recurso).join(", ") }}
         {{ lotesSinOpciones.length === 1 ? "no tiene" : "no tienen" }} ofertas validadas que cubran el lote.
       </p>
       <fieldset v-for="lote in lotes" :key="lote.loteId" class="adjudicar-lote"
         :aria-invalid="intentoConfirmar && !elegidas[lote.loteId]">
         <legend>{{ lote.recurso }} · se necesitan {{ lote.requerido }}</legend>
-        <p v-if="!lote.ofertas.length" class="emergencia-error">
-          Ninguna oferta validada cubre este lote.
+        <p v-if="!lote.ofertas.length" :class="coberturaParcial ? 'ong-ayuda' : 'emergencia-error'">
+          {{ coberturaParcial ? "Queda sin cubrir: ninguna oferta validada lo cubre." : "Ninguna oferta validada cubre este lote." }}
         </p>
         <label v-for="oferta in lote.ofertas" :key="oferta.id" class="adjudicar-opcion">
           <input v-model="elegidas[lote.loteId]" type="radio" :name="`lote-${lote.loteId}`" :value="oferta.id" />
@@ -137,7 +145,7 @@ async function confirmar() {
 
       <div class="lote-acciones">
         <button type="button" class="bandeja-actualizar" @click="emit('volver')">Volver</button>
-        <button type="button" class="btn-ingresar emergencia-submit" :disabled="enviando || lotesSinOpciones.length > 0" @click="revisar">Adjudicar</button>
+        <button type="button" class="btn-ingresar emergencia-submit" :disabled="enviando || (!coberturaParcial && lotesSinOpciones.length > 0)" @click="revisar">Adjudicar</button>
       </div>
     </template>
 
@@ -148,7 +156,7 @@ async function confirmar() {
       <dl class="confirmacion-resumen">
         <div v-for="lote in lotes" :key="lote.loteId">
           <dt>{{ lote.recurso }} ({{ lote.requerido }})</dt>
-          <dd>{{ ofertaElegida(lote) ? nombreOferta(ofertaElegida(lote)!) : "-" }}</dd>
+          <dd>{{ ofertaElegida(lote) ? nombreOferta(ofertaElegida(lote)!) : "Sin cubrir" }}</dd>
         </div>
       </dl>
       <p v-if="error" class="emergencia-error" role="alert">{{ error }}</p>

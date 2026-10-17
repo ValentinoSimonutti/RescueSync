@@ -18,6 +18,10 @@ public class Lote {
 
     private int cantidad;
 
+    // false = lote de una convocatoria anterior (el coordinador la reabrió con lotes nuevos).
+    // null en filas viejas = vigente.
+    private Boolean vigente = true;
+
     @ManyToOne
     private Emergencia emergencia;
 
@@ -52,6 +56,14 @@ public class Lote {
 
     public void setRecursoCodigo(String recursoCodigo) {
         this.recursoCodigo = recursoCodigo;
+    }
+
+    public boolean isVigente() {
+        return vigente == null || vigente;
+    }
+
+    public void archivar() {
+        this.vigente = false;
     }
 
     public int getCantidad() {

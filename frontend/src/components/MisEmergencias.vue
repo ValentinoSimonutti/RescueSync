@@ -36,8 +36,11 @@ async function cargar() {
     const ids = tareas.filter(t => t.nombreTarea === "Adjudicar y notificar").map(t => t.emergencia.id);
     const listas = await Promise.all(ids.map(async id => {
       try {
-        const { lotes } = await opcionesAdjudicacion(id);
-        return lotes.length > 0 && lotes.every(l => l.ofertas.length > 0);
+        const { lotes, emergencia } = await opcionesAdjudicacion(id);
+        // Con cobertura parcial alcanza con que algún lote tenga una oferta validada
+        return emergencia.coberturaParcial
+          ? lotes.some(l => l.ofertas.length > 0)
+          : lotes.length > 0 && lotes.every(l => l.ofertas.length > 0);
       } catch {
         return false;
       }
@@ -102,7 +105,9 @@ onMounted(cargar);
           <span class="mis-emergencias-estado">Estado: {{ mostrarTexto(emergencia.estado) }}</span>
         </div>
         <div v-if="porAdjudicar.get(emergencia.id)" class="mis-emergencias-accion">
-          <span>El Sistema Nacional validó las ofertas y todos los lotes están cubiertos.</span>
+          <span>{{ emergencia.coberturaParcial
+            ? "El coordinador decidió continuar con cobertura parcial: adjudicá los lotes que tienen ofertas validadas."
+            : "El Sistema Nacional validó las ofertas y todos los lotes están cubiertos." }}</span>
           <button type="button" class="btn-ingresar bandeja-boton" @click="emit('adjudicar', emergencia)">Adjudicar</button>
         </div>
         <p v-else-if="porAdjudicar.has(emergencia.id)" class="mis-emergencias-accion bloqueada" role="note">
