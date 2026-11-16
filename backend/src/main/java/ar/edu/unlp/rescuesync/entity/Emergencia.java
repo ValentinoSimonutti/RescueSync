@@ -28,6 +28,11 @@ public class Emergencia {
 
     private LocalDateTime fechaCierreOfertas;
 
+    // Para los indicadores del dashboard (las emergencias viejas pueden tenerlas en null)
+    private LocalDateTime fechaRegistro;
+    private LocalDateTime fechaAdjudicacion;   // última adjudicación (si el compromiso falla, se vuelve a adjudicar)
+    private LocalDateTime fechaCierre;         // el Sistema Nacional cerró el proyecto
+
     @Enumerated(EnumType.STRING)
     private EstadoEmergencia estado;
 
@@ -54,6 +59,7 @@ public class Emergencia {
         this.gravedad = gravedad;
         this.municipio = municipio;
         this.estado = EstadoEmergencia.REGISTRADA;
+        this.fechaRegistro = LocalDateTime.now();
     }
 
     public String getZonaAfectada() {
@@ -138,6 +144,34 @@ public class Emergencia {
 
     public void setAvisoCompromiso(String avisoCompromiso) {
         this.avisoCompromiso = avisoCompromiso;
+    }
+
+    public LocalDateTime getFechaRegistro() {
+        return fechaRegistro;
+    }
+
+    public void setFechaRegistro(LocalDateTime fechaRegistro) {
+        this.fechaRegistro = fechaRegistro;
+    }
+
+    public LocalDateTime getFechaAdjudicacion() {
+        return fechaAdjudicacion;
+    }
+
+    public void setFechaAdjudicacion(LocalDateTime fechaAdjudicacion) {
+        this.fechaAdjudicacion = fechaAdjudicacion;
+    }
+
+    public LocalDateTime getFechaCierre() {
+        return fechaCierre;
+    }
+
+    public void setFechaCierre(LocalDateTime fechaCierre) {
+        this.fechaCierre = fechaCierre;
+    }
+
+    public List<Lote> getLotes() {
+        return lotes;
     }
 
     public void addLote(Lote lote) {

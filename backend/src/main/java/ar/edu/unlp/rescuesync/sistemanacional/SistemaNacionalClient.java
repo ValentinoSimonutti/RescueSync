@@ -104,6 +104,32 @@ public class SistemaNacionalClient {
                 .toBodilessEntity());
     }
 
+    // ---- Dashboard: consultas de solo lectura -----------------------------------
+
+    public List<ConsultasSN.Disponibilidad> disponibilidad() {
+        return consultar("consultar la disponibilidad global", "/api/recursos/disponibilidad",
+                new ParameterizedTypeReference<>() {});
+    }
+
+    public List<ConsultasSN.Compromiso> compromisos() {
+        return consultar("consultar los compromisos", "/api/compromisos",
+                new ParameterizedTypeReference<>() {});
+    }
+
+    public List<ConsultasSN.Ong> ongs() {
+        return consultar("consultar el padrón de ONGs", "/api/ongs",
+                new ParameterizedTypeReference<>() {});
+    }
+
+    private <T> List<T> consultar(String accion, String path, ParameterizedTypeReference<List<T>> tipo) {
+        List<T> lista = conToken(accion, jwt -> http.get()
+                .uri(path)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
+                .retrieve()
+                .body(tipo));
+        return lista == null ? List.of() : lista;
+    }
+
     // ---- helpers -----------------------------------------------------------------
 
     // Hace la llamada con el token guardado. Si la API responde 401 (token vencido o

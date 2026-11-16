@@ -218,6 +218,7 @@ public class AdjudicacionService {
         }
 
         emergencia.setEstado(EstadoEmergencia.ADJUDICADA);
+        emergencia.setFechaAdjudicacion(java.time.LocalDateTime.now());
 
         // Completar "Adjudicar y notificar" con la sesión del municipio -> Bonita sigue a "Comprometer Recursos"
         BonitaSession sesion = usuario.bonita();

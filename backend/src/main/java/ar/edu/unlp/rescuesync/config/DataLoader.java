@@ -1,6 +1,7 @@
 package ar.edu.unlp.rescuesync.config;
 
 import ar.edu.unlp.rescuesync.repository.CentroCoordinadorRepository;
+import ar.edu.unlp.rescuesync.repository.EmergenciaRepository;
 import ar.edu.unlp.rescuesync.repository.MunicipioRepository;
 import ar.edu.unlp.rescuesync.repository.ONGRepository;
 import ar.edu.unlp.rescuesync.repository.UsuarioRepository;
@@ -22,17 +23,20 @@ public class DataLoader implements CommandLineRunner {
     private final CentroCoordinadorRepository centroCoordinadorRepository;
     private final ONGRepository ongRepository;
     private final UsuarioRepository usuarioRepository;
+    private final EmergenciaRepository emergenciaRepository;
 
     public DataLoader(
             MunicipioRepository municipioRepository,
             CentroCoordinadorRepository centroCoordinadorRepository,
             ONGRepository ongRepository,
-            UsuarioRepository usuarioRepository) {
+            UsuarioRepository usuarioRepository,
+            EmergenciaRepository emergenciaRepository) {
 
         this.municipioRepository = municipioRepository;
         this.centroCoordinadorRepository = centroCoordinadorRepository;
         this.ongRepository = ongRepository;
         this.usuarioRepository = usuarioRepository;
+        this.emergenciaRepository = emergenciaRepository;
     }
 
     @Override
@@ -120,5 +124,9 @@ public class DataLoader implements CommandLineRunner {
                 }
             }
         }
+
+        // Emergencias anteriores al dashboard: fechas aproximadas para que entren en los indicadores
+        emergenciaRepository.completarFechasRegistro();
+        emergenciaRepository.completarFechasCierre();
     }
 }

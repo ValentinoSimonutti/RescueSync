@@ -140,6 +140,9 @@ public class EjecucionService {
                     "El Sistema Nacional no informó el proyecto como cerrado");
         }
         emergencia.setEstado(EstadoEmergencia.CERRADA);
+        if (emergencia.getFechaCierre() == null) {   // Bonita puede reintentar el aviso
+            emergencia.setFechaCierre(java.time.LocalDateTime.now());
+        }
         return EmergenciaDTO.desde(emergencia);
     }
 

@@ -218,6 +218,58 @@ public class BonitaClient {
                 .toBodilessEntity());
     }
 
+    // ---- Dashboard: consultas de solo lectura (las hace el auditor, que es Administrator en Bonita) ----
+
+    // Todos los deploys del proceso (cada Run de Studio puede dejar uno con otro id)
+    public List<Map<String, Object>> procesosDesplegados(BonitaSession sesion) {
+        return buscarTodo(sesion, "/API/bpm/process", List.of("name=" + nombreProceso));
+    }
+
+    // Casos en curso de un proceso
+    public List<Map<String, Object>> casosActivos(BonitaSession sesion, String processId) {
+        return buscarTodo(sesion, "/API/bpm/case", List.of("processDefinitionId=" + processId));
+    }
+
+    // Casos terminados (sourceObjectId = id que tenía el caso mientras estaba activo)
+    public List<Map<String, Object>> casosArchivados(BonitaSession sesion, String processId) {
+        return buscarTodo(sesion, "/API/bpm/archivedCase", List.of("processDefinitionId=" + processId));
+    }
+
+    // Tareas, eventos y gateways ya ejecutados (de casos activos y terminados)
+    public List<Map<String, Object>> nodosArchivados(BonitaSession sesion, String processId) {
+        return buscarTodo(sesion, "/API/bpm/archivedFlowNode", List.of("processId=" + processId));
+    }
+
+    // Tareas humanas que hoy están esperando a alguien (de todos los usuarios)
+    public List<Map<String, Object>> tareasListas(BonitaSession sesion, String processId) {
+        return buscarTodo(sesion, "/API/bpm/humanTask", List.of("state=ready", "processId=" + processId));
+    }
+
+    // GET paginado: pide de a 100 hasta que una página venga incompleta
+    private List<Map<String, Object>> buscarTodo(BonitaSession sesion, String path, List<String> filtros) {
+        final int tamanio = 100;
+        List<Map<String, Object>> todo = new java.util.ArrayList<>();
+        for (int pagina = 0; ; pagina++) {
+            final int p = pagina;
+            List<Map<String, Object>> parte = llamar("consultar " + path, () -> http.get()
+                    .uri(uriBuilder -> {
+                        uriBuilder.path(path).queryParam("p", p).queryParam("c", tamanio);
+                        filtros.forEach(f -> uriBuilder.queryParam("f", f));
+                        return uriBuilder.build();
+                    })
+                    .headers(sesion::aplicar)
+                    .retrieve()
+                    .body(LISTA_JSON));
+            if (parte == null || parte.isEmpty()) {
+                return todo;
+            }
+            todo.addAll(parte);
+            if (parte.size() < tamanio) {
+                return todo;
+            }
+        }
+    }
+
     // ---- helpers -----------------------------------------------------------------
 
     // NUEVO: envuelve cada llamada. Si Bonita responde error (400, 403...) o no responde,
