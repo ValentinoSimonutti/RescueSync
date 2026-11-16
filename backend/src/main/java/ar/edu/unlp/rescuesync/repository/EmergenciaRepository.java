@@ -21,6 +21,8 @@ public interface EmergenciaRepository extends JpaRepository<Emergencia,Long> {
 
     List<Emergencia> findByEstadoInOrderByIdDesc(List<EstadoEmergencia> estados);
 
+    boolean existsByEstadoIn(List<EstadoEmergencia> estados);
+
     // Emergencias creadas antes de que existieran las fechas: se aproximan con la primera oferta
     // (o el cierre de la convocatoria) y con la última finalización de una ONG.
     @Modifying

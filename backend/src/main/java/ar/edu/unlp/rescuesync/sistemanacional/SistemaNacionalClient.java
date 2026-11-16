@@ -104,6 +104,21 @@ public class SistemaNacionalClient {
                 .toBodilessEntity());
     }
 
+    // ---- Ping sin autenticación (para que Render no duerma la API) --------------
+    // No lanza excepciones: si falla, el próximo ping lo vuelve a intentar.
+    public boolean despertar() {
+        try {
+            http.get().uri("/actuator/health").retrieve().toBodilessEntity();
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
     // ---- Dashboard: consultas de solo lectura -----------------------------------
 
     public List<ConsultasSN.Disponibilidad> disponibilidad() {
