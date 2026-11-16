@@ -11,6 +11,7 @@ import ConvocatoriasCCR from "./components/ConvocatoriasCCR.vue";
 import AdjudicarEmergencia from "./components/AdjudicarEmergencia.vue";
 import MonitorearDespliegue from "./components/MonitorearDespliegue.vue";
 import SeguimientoDespliegues from "./components/SeguimientoDespliegues.vue";
+import DashboardAuditor from "./components/DashboardAuditor.vue";
 import type { Tarea } from "./services/tareaService";
 import type { Emergencia } from "./services/emergenciaService";
 import { logout, usuarioActual, type Usuario } from "./services/authService";
@@ -130,6 +131,7 @@ async function salir() {
 
 function mostrarRol(rol: Usuario["rol"]) {
   if (rol === "CCR") return "Centro Coordinador Regional";
+  if (rol === "AUDITOR") return "Auditor / Directivo";
 
   return rol
     .toLocaleLowerCase("es")
@@ -146,11 +148,7 @@ function mostrarRol(rol: Usuario["rol"]) {
       <div class="inicio-logo panel-logo">
         <span>RescueSync</span>
       </div>
-      <nav
-        v-if="usuario.rol !== 'AUDITOR'"
-        class="panel-nav"
-        aria-label="Navegación principal"
-      >
+      <nav class="panel-nav" aria-label="Navegación principal">
         <template v-if="usuario.rol === 'OPERADOR_MUNICIPAL'">
           <button
             type="button"
@@ -197,6 +195,7 @@ function mostrarRol(rol: Usuario["rol"]) {
             Despliegues
           </button>
         </template>
+        <button v-else-if="usuario.rol === 'AUDITOR'" type="button" class="panel-nav-enlace" aria-current="page">Indicadores</button>
         <button v-else type="button" class="panel-nav-enlace" aria-current="page">Lotes</button>
       </nav>
       <div class="panel-header-usuario">
@@ -254,9 +253,7 @@ function mostrarRol(rol: Usuario["rol"]) {
     </template>
 
     <LotesONG v-else-if="usuario.rol === 'REPRESENTANTE_ONG'" />
-    <section v-else class="emergencia-card">
-      <p>Bienvenido/a. Tu pantalla todavía está en construcción.</p>
-    </section>
+    <DashboardAuditor v-else-if="usuario.rol === 'AUDITOR'" />
     <dialog
       ref="modalSalir"
       class="modal-salir"
