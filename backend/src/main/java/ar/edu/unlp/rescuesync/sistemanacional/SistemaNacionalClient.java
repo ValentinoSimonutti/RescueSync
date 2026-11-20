@@ -93,17 +93,6 @@ public class SistemaNacionalClient {
                 .findFirst();
     }
 
-    // ---- Finalización de una ONG ------------------------------------------------
-    // La ONG terminó sus actividades: el SN libera los recursos que tenía bloqueados en esta emergencia.
-    // Es idempotente: si ya estaba liberada, no pasa nada.
-    public void finalizarOng(String emergenciaRef, String cuit) {
-        conToken("informar la finalización de la ONG " + cuit, jwt -> http.post()
-                .uri("/api/proyectos/{ref}/ongs/{cuit}/finalizacion", emergenciaRef, cuit)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + jwt)
-                .retrieve()
-                .toBodilessEntity());
-    }
-
     // ---- Ping sin autenticación (para que Render no duerma la API) --------------
     // No lanza excepciones: si falla, el próximo ping lo vuelve a intentar.
     public boolean despertar() {

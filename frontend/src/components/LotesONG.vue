@@ -104,7 +104,7 @@ async function confirmarFinalizacion() {
     dialogoFinalizar.value?.close();
     mensajeFinalizacion.value = despliegue.ongsFinalizadas === despliegue.ongsTotal
       ? "Actividades finalizadas. Eras la última ONG: se cierra el proyecto y se liberan los recursos."
-      : "Actividades finalizadas. El Sistema Nacional liberó tus recursos de esta emergencia.";
+      : "Actividades finalizadas. Los recursos se liberan cuando todas las ONGs terminen y se cierre el proyecto.";
     await cargar();
   } catch (e) {
     errorFinalizacion.value = e instanceof Error ? e.message : "No se pudo marcar la finalización";

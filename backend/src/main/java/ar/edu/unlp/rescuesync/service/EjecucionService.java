@@ -7,7 +7,6 @@ import ar.edu.unlp.rescuesync.dto.EmergenciaDTO;
 import ar.edu.unlp.rescuesync.dto.ResultadoCompromisoDTO;
 import ar.edu.unlp.rescuesync.entity.Aporte;
 import ar.edu.unlp.rescuesync.entity.Emergencia;
-import ar.edu.unlp.rescuesync.entity.ONG;
 import ar.edu.unlp.rescuesync.entity.Oferta;
 import ar.edu.unlp.rescuesync.entity.enums.EstadoAporte;
 import ar.edu.unlp.rescuesync.entity.enums.EstadoEmergencia;
@@ -16,7 +15,6 @@ import ar.edu.unlp.rescuesync.entity.enums.ResultadoOferta;
 import ar.edu.unlp.rescuesync.repository.EmergenciaRepository;
 import ar.edu.unlp.rescuesync.repository.OfertaRepository;
 import ar.edu.unlp.rescuesync.sistemanacional.CompromisoSN;
-import ar.edu.unlp.rescuesync.sistemanacional.SistemaNacionalClient;
 import ar.edu.unlp.rescuesync.sistemanacional.ValidacionSN;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -34,9 +32,10 @@ import java.util.stream.Collectors;
 //  1. "Comprometer Recursos" (Bonita): pide el request, lo manda al SN y nos reenvía la respuesta.
 //     201 -> sigue a "Monitorear". 409 -> la emergencia vuelve a "Adjudicar y notificar".
 //  2. "Monitorear estado de despliegue" (CCR): revisa lo comprometido y da inicio al despliegue.
-//  3. "Ejecutar y marcar tareas finalizadas" (ONG): cada ONG marca su parte y el backend le avisa al SN,
-//     que libera sus recursos. Cuando termina la última, se completa la tarea en Bonita.
-//  4. Al completarse esa tarea, Bonita cierra el proyecto en el SN y nos avisa: la emergencia queda CERRADA.
+//  3. "Ejecutar y marcar tareas finalizadas" (ONG): cada ONG marca su parte, que se registra solo en la
+//     base local. Cuando termina la última, se completa la tarea en Bonita.
+//  4. Al completarse esa tarea, Bonita cierra el proyecto en el SN (que libera los recursos) y nos avisa:
+//     la emergencia queda CERRADA.
 @Service
 public class EjecucionService {
 
@@ -46,14 +45,12 @@ public class EjecucionService {
     private final EmergenciaRepository emergenciaRepository;
     private final OfertaRepository ofertaRepository;
     private final BonitaClient bonitaClient;
-    private final SistemaNacionalClient sistemaNacional;
 
     public EjecucionService(EmergenciaRepository emergenciaRepository, OfertaRepository ofertaRepository,
-                            BonitaClient bonitaClient, SistemaNacionalClient sistemaNacional) {
+                            BonitaClient bonitaClient) {
         this.emergenciaRepository = emergenciaRepository;
         this.ofertaRepository = ofertaRepository;
         this.bonitaClient = bonitaClient;
-        this.sistemaNacional = sistemaNacional;
     }
 
     // ========================================================================
@@ -180,8 +177,9 @@ public class EjecucionService {
 
     // ========================================================================
     // ONG: marcar sus actividades como finalizadas
-    // Primero se le avisa al SN (libera sus recursos; es idempotente, se puede reintentar).
-    // Si es la última ONG, se completa la tarea de Bonita, que después cierra el proyecto.
+    // La finalización de cada ONG se registra solo en la base local.
+    // Si es la última ONG, se completa la tarea de Bonita, que cierra el proyecto en el SN
+    // y libera los recursos.
     // ========================================================================
     @Transactional
     public DespliegueDTO finalizar(Long emergenciaId, UsuarioLogueado ong) {
@@ -200,8 +198,6 @@ public class EjecucionService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ya marcaste tus actividades como finalizadas");
         }
 
-        ONG organizacion = mios.get(0).getOng();
-        sistemaNacional.finalizarOng(ValidacionSN.emergenciaRef(emergenciaId), organizacion.getCuit());
         mios.stream().filter(a -> a.getFechaFinalizacion() == null).forEach(Aporte::finalizar);
 
         if (asignados.stream().allMatch(a -> a.getFechaFinalizacion() != null)) {
