@@ -1,18 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import {
-  indicadoresBonita, indicadoresLocales, indicadoresNacionales,
-  type DashboardBonita, type DashboardLocal, type DashboardNacional
+  indicadoresBonita, indicadoresLocales,
+  type DashboardBonita, type DashboardLocal
 } from "../services/dashboardService";
+import { tiposRecurso, type TipoRecurso } from "../services/catalogoService";
 import { descargarJson } from "../utils/exportar";
 import PanelProceso from "./dashboard/PanelProceso.vue";
 import PanelOperacion from "./dashboard/PanelOperacion.vue";
-import PanelNacional from "./dashboard/PanelNacional.vue";
 
-// Dashboard del Auditor / Directivo. Junta las tres fuentes del sistema:
+// Dashboard del Auditor / Directivo. Junta las dos fuentes de indicadores:
 //  - base local de la app (ofertas, consorcios, suministros)
 //  - API de Bonita (tiempos de cada etapa del proceso)
-//  - API del Sistema Nacional en la nube (recursos a nivel país)
 // Cada una se pide por separado: si una no responde, las otras se muestran igual.
 
 interface Fuente<T> {
@@ -27,12 +26,12 @@ function nuevaFuente<T>() {
 
 const local = nuevaFuente<DashboardLocal>();
 const bonita = nuevaFuente<DashboardBonita>();
-const nacional = nuevaFuente<DashboardNacional>();
+const catalogo = ref<TipoRecurso[]>([]);   // solo para las unidades (litros, personas...)
 
 const desde = ref("");
 const hasta = ref("");
 
-async function cargar<T>(fuente: typeof local | typeof bonita | typeof nacional, pedido: () => Promise<T>) {
+async function cargar<T>(fuente: typeof local | typeof bonita, pedido: () => Promise<T>) {
   const f = fuente.value as Fuente<T>;
   f.cargando = true;
   f.error = "";
@@ -45,7 +44,7 @@ async function cargar<T>(fuente: typeof local | typeof bonita | typeof nacional,
   }
 }
 
-// El filtro de fechas aplica a la base local y a Bonita; el Sistema Nacional muestra el estado actual
+// El filtro de fechas aplica a la base local y a Bonita
 function cargarConFiltro() {
   void cargar(local, () => indicadoresLocales(desde.value, hasta.value));
   void cargar(bonita, () => indicadoresBonita(desde.value, hasta.value));
@@ -53,7 +52,6 @@ function cargarConFiltro() {
 
 function actualizarTodo() {
   cargarConFiltro();
-  void cargar(nacional, indicadoresNacionales);
 }
 
 // ---- Rangos rápidos ----
@@ -90,21 +88,23 @@ function alCambiarFecha() {
 
 // nombre del recurso -> unidad, para mostrar "litros", "personas"... en el panel local
 const unidades = computed<Record<string, string>>(() =>
-  Object.fromEntries((nacional.value.datos?.recursos ?? []).map(r => [r.nombre, r.unidad])));
+  Object.fromEntries(catalogo.value.map(t => [t.nombre, t.unidad])));
 
-const hayDatos = computed(() => !!(local.value.datos || bonita.value.datos || nacional.value.datos));
+const hayDatos = computed(() => !!(local.value.datos || bonita.value.datos));
 
 function exportarTodo() {
   descargarJson(`rescuesync-indicadores-${iso(new Date())}`, {
     generado: new Date().toISOString(),
     periodo: { desde: desde.value || null, hasta: hasta.value || null },
     baseLocal: local.value.datos,
-    bonita: bonita.value.datos,
-    sistemaNacional: nacional.value.datos
+    bonita: bonita.value.datos
   });
 }
 
-onMounted(actualizarTodo);
+onMounted(() => {
+  actualizarTodo();
+  tiposRecurso().then(t => (catalogo.value = t)).catch(() => {});   // si falla, se muestra "unidad"
+});
 </script>
 
 <template>
@@ -119,7 +119,7 @@ onMounted(actualizarTodo);
           Exportar todo (JSON)
         </button>
         <button type="button" class="bandeja-actualizar"
-          :disabled="local.cargando || bonita.cargando || nacional.cargando" @click="actualizarTodo">
+          :disabled="local.cargando || bonita.cargando" @click="actualizarTodo">
           Actualizar
         </button>
       </div>
@@ -144,7 +144,6 @@ onMounted(actualizarTodo);
     <p v-if="rangoInvalido" class="emergencia-error" role="alert">La fecha "desde" tiene que ser anterior a "hasta".</p>
     <p class="ong-ayuda">
       El período filtra las emergencias por fecha de registro y los casos de Bonita por fecha de inicio.
-      El panel del Sistema Nacional muestra siempre el estado actual.
     </p>
 
     <section class="dash-seccion" aria-labelledby="dash-proceso">
@@ -165,18 +164,6 @@ onMounted(actualizarTodo);
       <p v-if="local.error" class="emergencia-error" role="alert">{{ local.error }}</p>
       <p v-else-if="local.cargando && !local.datos" role="status">Cargando indicadores...</p>
       <PanelOperacion v-if="local.datos" :datos="local.datos" :unidades="unidades" />
-    </section>
-
-    <section class="dash-seccion" aria-labelledby="dash-nacional">
-      <header class="dash-seccion-encabezado">
-        <h2 id="dash-nacional">Recursos a nivel nacional</h2>
-        <span class="dash-fuente">Fuente: API del Sistema Nacional (nube)</span>
-      </header>
-      <p v-if="nacional.error" class="emergencia-error" role="alert">{{ nacional.error }}</p>
-      <p v-else-if="nacional.cargando && !nacional.datos" role="status">
-        Consultando al Sistema Nacional... si estaba dormido en Render, puede tardar hasta un minuto.
-      </p>
-      <PanelNacional v-if="nacional.datos" :datos="nacional.datos" />
     </section>
   </section>
 </template>

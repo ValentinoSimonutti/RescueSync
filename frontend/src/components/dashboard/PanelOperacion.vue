@@ -10,7 +10,7 @@ import TarjetaDatos from "./TarjetaDatos.vue";
 // Panel con los indicadores propios (base de datos local de la app)
 const props = defineProps<{
   datos: DashboardLocal;
-  unidades: Record<string, string>;   // nombre del recurso -> unidad (sale del Sistema Nacional)
+    unidades: Record<string, string>;   // nombre del recurso -> unidad (sale del catálogo local)
 }>();
 
 const unidad = (recurso: string) => props.unidades[recurso] ?? "unidad";

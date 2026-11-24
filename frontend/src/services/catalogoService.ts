@@ -1,6 +1,6 @@
 import { get } from "./api";
 
-// Tipo de recurso del catálogo nacional (el backend hace de proxy al Sistema Nacional)
+// Tipo de recurso del catálogo nacional (catálogo precargado en el backend)
 export interface TipoRecurso {
   codigo: string;                         // ej: "PARAMEDICO"
   nombre: string;                         // ej: "Paramédicos"

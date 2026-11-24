@@ -146,7 +146,7 @@ async function publicar() {
       Podés cambiar las cantidades o sacar recursos (no se pueden agregar nuevos) y elegir un plazo nuevo.
     </p>
     <p class="lotes-requeridos">Todos los campos son obligatorios.</p>
-    <p v-if="cargandoCatalogo" class="ong-ayuda" role="status">Cargando el catálogo nacional de recursos. Si el Sistema Nacional estaba inactivo, puede tardar hasta un minuto.</p>
+    <p v-if="cargandoCatalogo" class="ong-ayuda" role="status">Cargando el catálogo nacional de recursos...</p>
     <p v-if="errorCatalogo" class="emergencia-error" role="alert">
       {{ errorCatalogo }}
       <button type="button" class="bandeja-actualizar" @click="cargarCatalogo">Reintentar</button>

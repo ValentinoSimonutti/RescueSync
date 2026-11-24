@@ -88,18 +88,6 @@ export interface DashboardBonita {
   advertencia: string | null;
 }
 
-// ---- Sistema Nacional (DashboardSistemaNacionalDTO) ----------------------------
-export interface DashboardNacional {
-  recursos: { codigo: string; nombre: string; unidad: string; total: number; comprometido: number; disponible: number }[];
-  compromisosActivos: number;
-  compromisosLiberados: number;
-  unidadesComprometidas: number;
-  ongsHabilitadas: number;
-  ongsRegistradas: number;
-  ongsPorEstado: Conteo[];
-  detalleActivos: { emergenciaRef: string; ong: string; recurso: string; cantidad: number; rol: string; fecha: string | null }[];
-}
-
 // desde / hasta: "yyyy-MM-dd" o vacío
 function rango(desde: string, hasta: string): string {
   const params = new URLSearchParams();
@@ -115,8 +103,4 @@ export function indicadoresLocales(desde: string, hasta: string): Promise<Dashbo
 
 export function indicadoresBonita(desde: string, hasta: string): Promise<DashboardBonita> {
   return get<DashboardBonita>(`/dashboard/bonita${rango(desde, hasta)}`);
-}
-
-export function indicadoresNacionales(): Promise<DashboardNacional> {
-  return get<DashboardNacional>("/dashboard/sistema-nacional");
 }
