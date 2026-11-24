@@ -6,7 +6,12 @@ export interface Columna<T> {
   // Lo que va al CSV si difiere de lo que se muestra (ej: minutos como número en vez de "3 h 20 min")
   crudo?: (fila: T) => string | number | boolean | null | undefined;
   tituloCsv?: string;   // encabezado del CSV si cambia la unidad (ej: "Promedio (min)")
+  alinear?: "derecha";  // números: alineados a la derecha en la tabla
+  tono?: (fila: T) => Tono | undefined;   // muestra el valor como etiqueta de color (ej: estado)
 }
+
+// Colores de las etiquetas de estado en las tablas (siempre acompañadas de su texto)
+export type Tono = "bien" | "proceso" | "alerta" | "neutro";
 
 // CSV con separador ";" y BOM: Excel en español lo abre con columnas y acentos bien
 export function aCsv<T>(filas: T[], columnas: Columna<T>[]): string {
