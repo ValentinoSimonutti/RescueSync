@@ -5,10 +5,8 @@ import ar.edu.unlp.rescuesync.auth.SesionActual;
 import ar.edu.unlp.rescuesync.auth.UsuarioLogueado;
 import ar.edu.unlp.rescuesync.dto.DashboardBonitaDTO;
 import ar.edu.unlp.rescuesync.dto.DashboardLocalDTO;
-import ar.edu.unlp.rescuesync.dto.DashboardSistemaNacionalDTO;
 import ar.edu.unlp.rescuesync.service.DashboardBonitaService;
 import ar.edu.unlp.rescuesync.service.DashboardLocalService;
-import ar.edu.unlp.rescuesync.service.DashboardSistemaNacionalService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -20,23 +18,20 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 
-// Dashboard del Auditor / Directivo. Un endpoint por fuente de datos: si Bonita está cerrado
-// o el Sistema Nacional está despertando en Render, solo falla ese panel.
-// desde / hasta (opcionales, yyyy-MM-dd) filtran por fecha de registro de la emergencia o de inicio del caso.
+// Dashboard del Auditor / Directivo. Un endpoint por fuente de datos (base local y API de Bonita):
+// si Bonita está cerrado, solo falla ese panel.
 @RestController
 @RequestMapping("/api/dashboard")
 public class DashboardController {
 
     private final DashboardLocalService local;
     private final DashboardBonitaService bonita;
-    private final DashboardSistemaNacionalService sistemaNacional;
     private final SesionActual sesionActual;
 
     public DashboardController(DashboardLocalService local, DashboardBonitaService bonita,
-                               DashboardSistemaNacionalService sistemaNacional, SesionActual sesionActual) {
+                               SesionActual sesionActual) {
         this.local = local;
         this.bonita = bonita;
-        this.sistemaNacional = sistemaNacional;
         this.sesionActual = sesionActual;
     }
 
@@ -57,12 +52,6 @@ public class DashboardController {
         return bonita.indicadores(auditor(session).bonita(), desde, hasta);
     }
 
-    // GET /api/dashboard/sistema-nacional -> recursos y compromisos a nivel nacional
-    @GetMapping("/sistema-nacional")
-    public DashboardSistemaNacionalDTO sistemaNacional(HttpSession session) {
-        auditor(session);
-        return sistemaNacional.indicadores();
-    }
 
     private UsuarioLogueado auditor(HttpSession session) {
         UsuarioLogueado usuario = sesionActual.obtener(session);
