@@ -151,8 +151,8 @@ onUnmounted(() => {
     <p v-if="error" class="emergencia-error" role="alert">{{ error }}</p>
 
     <p v-if="mensajeFinalizacion" class="emergencia-mensaje" role="status">{{ mensajeFinalizacion }}</p>
-    <section v-if="resultados.length" class="ong-resultados" aria-labelledby="ong-resultados-titulo">
-      <h2 id="ong-resultados-titulo" class="ong-oferta-titulo">Resultados de adjudicación</h2>
+    <details v-if="resultados.length" class="ong-resultados">
+      <summary class="ong-oferta-titulo">Resultados de adjudicación ({{ resultados.length }})</summary>
       <ul class="ong-aportes">
         <li v-for="oferta in resultados" :key="oferta.id" :class="oferta.resultado === 'ADJUDICADA' ? 'ong-oferta-ok' : 'ong-ayuda'">
           Emergencia #{{ oferta.emergenciaId }} · {{ oferta.zonaAfectada }} · {{ oferta.recurso }}:
@@ -169,7 +169,7 @@ onUnmounted(() => {
           </div>
         </li>
       </ul>
-    </section>
+    </details>
 
     <p v-if="cargando" role="status">Cargando lotes...</p>
     <p v-else-if="!error && vigentes.length === 0" class="bandeja-vacia">No hay convocatorias vigentes disponibles.</p>
