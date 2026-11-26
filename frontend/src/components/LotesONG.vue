@@ -33,6 +33,20 @@ const cierreEnOferta = computed(() => {
   for (const o of resultados.value) if (o.resultado === "ADJUDICADA") ultima.set(o.emergenciaId, o.id);
   return new Set(ultima.values());
 });
+// Una card por emergencia: sus resultados y la oferta que lleva el estado de finalización
+const resultadosPorEmergencia = computed(() => {
+  const grupos = new Map<number, { emergenciaId: number; zona: string; ofertas: Oferta[]; cierre: Oferta | null }>();
+  for (const o of resultados.value) {
+    let g = grupos.get(o.emergenciaId);
+    if (!g) {
+      g = { emergenciaId: o.emergenciaId, zona: o.zonaAfectada, ofertas: [], cierre: null };
+      grupos.set(o.emergenciaId, g);
+    }
+    g.ofertas.push(o);
+    if (cierreEnOferta.value.has(o.id)) g.cierre = o;
+  }
+  return [...grupos.values()];
+});
 
 const vigentes = computed(() => convocatorias.value.filter(c => {
   const fin = cierreDe(c.emergencia);
@@ -153,22 +167,30 @@ onUnmounted(() => {
     <p v-if="mensajeFinalizacion" class="emergencia-mensaje" role="status">{{ mensajeFinalizacion }}</p>
     <details v-if="resultados.length" class="ong-resultados">
       <summary class="ong-oferta-titulo">Resultados de adjudicación ({{ resultados.length }})</summary>
-      <ul class="ong-aportes">
-        <li v-for="oferta in resultados" :key="oferta.id" :class="oferta.resultado === 'ADJUDICADA' ? 'ong-oferta-ok' : 'ong-ayuda'">
-          Emergencia #{{ oferta.emergenciaId }} · {{ oferta.zonaAfectada }} · {{ oferta.recurso }}:
-          <strong v-if="oferta.resultado === 'ADJUDICADA'">
-            tu oferta fue seleccionada como responsable{{ oferta.consorcio ? " (en consorcio)" : "" }}<template v-if="oferta.miAporte?.rolValidacion === 'APOYO_SECUNDARIO'">, con tu ONG como apoyo secundario</template>.
-          </strong>
-          <template v-else>el municipio eligió otra oferta.</template>
-          <div v-if="cierreEnOferta.has(oferta.id)" class="ong-finalizar">
-            <span v-if="oferta.miAporte?.fechaFinalizacion">Marcaste tus actividades de esta emergencia como finalizadas el {{ fechaCorta(oferta.miAporte.fechaFinalizacion) }}.</span>
-            <span v-if="oferta.estadoEmergencia === 'ADJUDICADA'" class="ong-ayuda">Esperando que el coordinador inicie el despliegue.</span>
-            <span v-else-if="oferta.estadoEmergencia === 'CERRADA'">Proyecto cerrado: tus recursos quedaron liberados.</span>
-            <button v-else-if="oferta.estadoEmergencia === 'EN_EJECUCION' && !oferta.miAporte?.fechaFinalizacion"
-              type="button" class="btn-ingresar" @click="pedirFinalizacion(oferta)">Marcar actividades como finalizadas</button>
+      <div class="ong-resultados-grid">
+        <article v-for="grupo in resultadosPorEmergencia" :key="grupo.emergenciaId" class="ong-resultado-card">
+          <header class="ong-resultado-encabezado">
+            <strong>Emergencia #{{ grupo.emergenciaId }}</strong>
+            <span class="ong-ayuda">{{ grupo.zona }}</span>
+          </header>
+          <ul class="ong-aportes">
+            <li v-for="oferta in grupo.ofertas" :key="oferta.id" :class="oferta.resultado === 'ADJUDICADA' ? 'ong-oferta-ok' : 'ong-ayuda'">
+              {{ oferta.recurso }}:
+              <strong v-if="oferta.resultado === 'ADJUDICADA'">
+                tu oferta fue seleccionada como responsable{{ oferta.consorcio ? " (en consorcio)" : "" }}<template v-if="oferta.miAporte?.rolValidacion === 'APOYO_SECUNDARIO'">, con tu ONG como apoyo secundario</template>.
+              </strong>
+              <template v-else>el municipio eligió otra oferta.</template>
+            </li>
+          </ul>
+          <div v-if="grupo.cierre" class="ong-finalizar">
+            <span v-if="grupo.cierre.miAporte?.fechaFinalizacion">Marcaste tus actividades de esta emergencia como finalizadas el {{ fechaCorta(grupo.cierre.miAporte.fechaFinalizacion) }}.</span>
+            <span v-if="grupo.cierre.estadoEmergencia === 'ADJUDICADA'" class="ong-ayuda">Esperando que el coordinador inicie el despliegue.</span>
+            <span v-else-if="grupo.cierre.estadoEmergencia === 'CERRADA'">Proyecto cerrado: tus recursos quedaron liberados.</span>
+            <button v-else-if="grupo.cierre.estadoEmergencia === 'EN_EJECUCION' && !grupo.cierre.miAporte?.fechaFinalizacion"
+              type="button" class="btn-ingresar" @click="pedirFinalizacion(grupo.cierre)">Marcar actividades como finalizadas</button>
           </div>
-        </li>
-      </ul>
+        </article>
+      </div>
     </details>
 
     <p v-if="cargando" role="status">Cargando lotes...</p>
